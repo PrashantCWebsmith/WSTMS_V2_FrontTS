@@ -11,17 +11,12 @@ import {
     Repeat, 
     Trash2, 
     ArrowLeft,
-    Search,
-    Save,
-    Calendar as CalendarIcon,
-    RefreshCw,
-    Bell,
-    Edit2
+    Search
 } from 'lucide-react';
 import { useSchedulers, useSaveScheduler, useDeleteScheduler } from '../hooks/queries/scheduler.queries';
 import Swal from 'sweetalert2';
 import { toast } from '@/utils/toast.utils';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
+
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { Editor, EditorProvider, Toolbar, BtnBold, BtnItalic, BtnLink } from 'react-simple-wysiwyg';
@@ -220,15 +215,14 @@ export const Scheduler: React.FC = () => {
                             <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Email Body</label>
                             <div className="flex-1 bg-gray-50 rounded-[2rem] overflow-hidden border-2 border-transparent focus-within:border-blue-500/20 transition-all">
                                 <EditorProvider>
+                                    <Toolbar>
+                                        <BtnBold /><BtnItalic /><BtnLink />
+                                    </Toolbar>
                                     <Editor 
                                         value={formData.emailBody}
                                         onChange={(e: any) => setFormData(prev => ({...prev, emailBody: e.target.value}))}
                                         className="h-full bg-transparent min-h-[400px]"
-                                    >
-                                        <Toolbar>
-                                            <BtnBold /><BtnItalic /><BtnLink />
-                                        </Toolbar>
-                                    </Editor>
+                                    />
                                 </EditorProvider>
                             </div>
                         </div>
@@ -251,6 +245,7 @@ export const Scheduler: React.FC = () => {
         );
     }
 
+    return (
         <div className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
             {/* Header Card */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
