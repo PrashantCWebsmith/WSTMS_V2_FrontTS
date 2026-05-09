@@ -30,7 +30,7 @@ export const SMTPList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<SMTPCreateUpdateDto>({
-    smtpIDP: 0,
+    smtpidp: 0,
     smtp: '',
     portNo: 587,
     userName: '',
