@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { toast } from '@/utils/toast.utils';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://tmsapi.websmithsolution.com/api/v1',
@@ -23,29 +22,17 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    const status = error.response?.status;
-
-    if (status === 401) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
-
-    if (status === 403) {
-      toast.error('Access denied. You do not have permission for this action.');
-    }
-
-    if (status === 404) {
-      toast.warning('Requested resource not found.');
-    }
-
-    if (status >= 500) {
-      toast.error('Server synchronisation failure. Please contact administrator.');
-    }
-
-    return Promise.reject(error);
+    // Return the response object even on error so services can unwrap it
+    return error.response || Promise.reject(error);
   }
 );
 

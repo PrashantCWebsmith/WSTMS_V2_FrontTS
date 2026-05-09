@@ -1,4 +1,7 @@
 import api from '@/api/axios-instance';
+import type { ActionRequestDto } from '@/types/api.types';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import type { TaskCommentModel } from '@/features/tasks/types/task.types';
 
 // Service for managing task comment API interactions.

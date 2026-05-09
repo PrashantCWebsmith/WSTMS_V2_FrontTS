@@ -192,7 +192,7 @@ export const LogSession: React.FC = () => {
                                         label: `${t.taskTitle} [${t.taskNo}]`
                                     }))
                                 ]}
-                                disabled={!projectIDF}
+                                isDisabled={!projectIDF}
                                 placeholder="Search tasks..."
                             />
                         </div>
@@ -223,7 +223,7 @@ export const LogSession: React.FC = () => {
                             value={assignToIDF}
                             onChange={(val) => setAssignToIDF(Number(val))}
                             options={lookups?.users.map((u: any) => ({ value: u.userIDP, label: u.userFullName || u.userName })) || []}
-                            disabled={!projectIDF}
+                            isDisabled={!projectIDF}
                             placeholder="Select User"
                         />
                     </div>

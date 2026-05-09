@@ -22,7 +22,7 @@ interface KanbanCardProps {
 }
 
 const KanbanCard: React.FC<KanbanCardProps> = ({ task, isOverlay = false, onTaskClick }) => {
-    const { isRunning, activeTask, startTimer, stopTimer } = useTimeTracking();
+    const { activeTask, startTimer, stopTimer } = useTimeTracking();
     const isCurrentActive = activeTask?.taskIDP === task.taskIDP;
 
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({

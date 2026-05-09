@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/page-header';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
+import { DataPagination } from '@/components/ui/DataPagination';
 import { Button } from '@/components/ui/button';
 import { 
     Clock, 
@@ -10,107 +11,98 @@ import {
     Calendar, 
     Repeat, 
     Trash2, 
-    ArrowLeft,
-    Search
+    Search,
+    Filter,
+    X
 } from 'lucide-react';
-import { useSchedulers, useSaveScheduler, useDeleteScheduler } from '../hooks/queries/scheduler.queries';
+import { useSchedulers, useDeleteScheduler } from '../hooks/queries/scheduler.queries';
+import { SchedulerFormModal } from '../components/SchedulerFormModal';
+import type { SchedulerListDto, SchedulerCreateUpdateDto } from '../types/scheduler.types';
 import Swal from 'sweetalert2';
 import { toast } from '@/utils/toast.utils';
 
-import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import { Editor, EditorProvider, Toolbar, BtnBold, BtnItalic, BtnLink } from 'react-simple-wysiwyg';
-
-interface SchedulerFormData {
-    schedulerIDP: number;
-    emailSubject: string;
-    emailBody: string;
-    sendToEmailIDs: string;
-    ccEmailIDs: string;
-    startDate: Date;
-    repeatType: string;
-    repeatDays: string;
-}
-
 export const Scheduler: React.FC = () => {
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
-            setPage(1);
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [searchTerm]);
-
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    const [current, setCurrent] = useState<any>(null);
-
-    const { data, isLoading } = useSchedulers({ page, size: pageSize, search: debouncedSearch });
-    const saveMutation = useSaveScheduler();
-    const deleteMutation = useDeleteScheduler();
-
-    const schedulers = useMemo(() => data?.data || [], [data]);
-    const totalPages = useMemo(() => data?.totalPages || 0, [data]);
-
-    const handlePageChange = useCallback((newPage: number) => {
-        setPage(newPage);
-    }, []);
-
-    const [formData, setFormData] = useState<SchedulerFormData>({
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formData, setFormData] = useState<SchedulerCreateUpdateDto>({
         schedulerIDP: 0,
         emailSubject: '',
         emailBody: '',
         sendToEmailIDs: '',
         ccEmailIDs: '',
-        startDate: new Date(),
+        startDate: new Date().toISOString(),
         repeatType: 'Daily',
-        repeatDays: ''
+        repeatDays: '',
+        status: true
     });
 
-    const handleOpenForm = (item: any = null) => {
+    const [appliedParams, setAppliedParams] = useState({
+        pageNo: 1,
+        pageSize: 10,
+        searchValue: ''
+    });
+
+    const { data, isLoading, refetch } = useSchedulers({ 
+        pageNo: appliedParams.pageNo, 
+        pageSize: appliedParams.pageSize, 
+        searchValue: appliedParams.searchValue 
+    });
+
+    const deleteMutation = useDeleteScheduler();
+
+    const handleSearch = () => {
+        setAppliedParams(prev => ({
+            ...prev,
+            searchValue: searchTerm,
+            pageNo: 1
+        }));
+    };
+
+    const handleClear = () => {
+        setSearchTerm('');
+        setAppliedParams({
+            pageNo: 1,
+            pageSize: appliedParams.pageSize,
+            searchValue: ''
+        });
+    };
+
+    const schedulers = useMemo(() => {
+        if (!data) return [];
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray((data as any).data)) return (data as any).data;
+        return [];
+    }, [data]);
+
+    const handleOpenModal = (item?: SchedulerListDto) => {
+        console.log('Opening modal with item:', item);
         if (item) {
-            setCurrent(item);
             setFormData({
                 schedulerIDP: item.schedulerIDP,
                 emailSubject: item.emailSubject,
-                emailBody: item.emailBody || '',
+                emailBody: '', // Will be fetched by modal
                 sendToEmailIDs: item.sendToEmailIDs,
-                ccEmailIDs: item.ccEmailIDs || '',
-                startDate: new Date(item.startDate),
-                repeatType: item.repeatType || 'Daily',
-                repeatDays: item.repeatDays || ''
+                ccEmailIDs: '', // Will be fetched by modal
+                startDate: item.startDate,
+                repeatType: item.repeatType,
+                repeatDays: '', // Will be fetched by modal
+                status: item.status
             });
         } else {
-            setCurrent(null);
             setFormData({
                 schedulerIDP: 0,
                 emailSubject: '',
                 emailBody: '',
                 sendToEmailIDs: '',
                 ccEmailIDs: '',
-                startDate: new Date(),
+                startDate: new Date().toISOString(),
                 repeatType: 'Daily',
-                repeatDays: ''
+                repeatDays: '',
+                status: true
             });
         }
-        setIsFormOpen(true);
-    };
-
-    const handleSave = async () => {
-        try {
-            await saveMutation.mutateAsync({
-                ...formData,
-                startDate: formData.startDate.toISOString()
-            } as any);
-            toast.success('Automation logic synchronized successfully.');
-            setIsFormOpen(false);
-        } catch (error) {
-            toast.error('Failed to synchronize automation parameters.');
-        }
+        setIsModalOpen(true);
     };
 
     const handleDelete = async (id: number) => {
@@ -133,135 +125,25 @@ export const Scheduler: React.FC = () => {
         }
     };
 
-    if (isFormOpen) {
-        return (
-            <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
-                <PageHeader 
-                    title={current ? 'Modify Trigger Logic' : 'Initiate New Automation'} 
-                    description="Configure scheduling parameters and communication payload."
-                    action={<Button variant="outline" onClick={() => setIsFormOpen(false)}><ArrowLeft size={18} className="mr-2"/> Back to List</Button>}
-                />
-
-                <div className="bg-white rounded-[3rem] shadow-xl border border-gray-100 p-12">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                        <div className="space-y-8">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Email Subject</label>
-                                <input 
-                                    value={formData.emailSubject}
-                                    onChange={(e) => setFormData(prev => ({...prev, emailSubject: e.target.value}))}
-                                    className="w-full px-8 py-5 bg-gray-50 border-none rounded-[1.5rem] font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-300 transition-all"
-                                    placeholder="Subject line"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Send To (Email IDs)</label>
-                                    <input 
-                                        value={formData.sendToEmailIDs}
-                                        onChange={(e) => setFormData(prev => ({...prev, sendToEmailIDs: e.target.value}))}
-                                        className="w-full px-8 py-5 bg-gray-50 border-none rounded-[1.5rem] font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-300 transition-all"
-                                        placeholder="comma, separated, emails"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">CC (Email IDs)</label>
-                                    <input 
-                                        value={formData.ccEmailIDs}
-                                        onChange={(e) => setFormData(prev => ({...prev, ccEmailIDs: e.target.value}))}
-                                        className="w-full px-8 py-5 bg-gray-50 border-none rounded-[1.5rem] font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-300 transition-all"
-                                        placeholder="comma, separated, emails"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Repeat Type</label>
-                                    <select 
-                                         value={formData.repeatType}
-                                         onChange={(e) => setFormData(prev => ({...prev, repeatType: e.target.value}))}
-                                         className="w-full px-6 py-5 bg-gray-50 border-none rounded-2xl font-black text-gray-800 focus:ring-4 focus:ring-blue-500/10"
-                                    >
-                                        <option value="Daily">Daily</option>
-                                        <option value="Weekly">Weekly</option>
-                                        <option value="Monthly">Monthly</option>
-                                        <option value="Yearly">Yearly</option>
-                                        <option value="Once">Once</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Start Date</label>
-                                    <div className="px-6 py-4 bg-gray-50 rounded-2xl">
-                                         <DatePicker 
-                                            selected={formData.startDate}
-                                            onChange={(d: Date | null) => d && setFormData(prev => ({...prev, startDate: d}))}
-                                            className="bg-transparent border-none font-black text-gray-800 focus:outline-none w-full"
-                                         />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Repeat Days</label>
-                                <input 
-                                    value={formData.repeatDays}
-                                    onChange={(e) => setFormData(prev => ({...prev, repeatDays: e.target.value}))}
-                                    className="w-full px-8 py-5 bg-gray-50 border-none rounded-[1.5rem] font-bold text-gray-800 focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-300 transition-all"
-                                    placeholder="e.g. Monday, Friday (if Weekly)"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2 flex flex-col h-full">
-                            <label className="text-[10px] font-black text-gray-400 tracking-widest uppercase ml-4">Email Body</label>
-                            <div className="flex-1 bg-gray-50 rounded-[2rem] overflow-hidden border-2 border-transparent focus-within:border-blue-500/20 transition-all">
-                                <EditorProvider>
-                                    <Toolbar>
-                                        <BtnBold /><BtnItalic /><BtnLink />
-                                    </Toolbar>
-                                    <Editor 
-                                        value={formData.emailBody}
-                                        onChange={(e: any) => setFormData(prev => ({...prev, emailBody: e.target.value}))}
-                                        className="h-full bg-transparent min-h-[400px]"
-                                    />
-                                </EditorProvider>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="mt-12 pt-12 border-t border-gray-50 flex gap-4">
-                        <Button 
-                            onClick={handleSave} 
-                            isLoading={saveMutation.isPending}
-                            className="flex-1 bg-gray-900 text-white py-8 rounded-[2rem] font-black shadow-2xl hover:scale-[1.02] transition-all"
-                        >
-                            SAVE SCHEDULER
-                        </Button>
-                        <Button onClick={() => setIsFormOpen(false)} variant="ghost" className="px-12 rounded-[2rem] font-black text-gray-400 hover:text-gray-900">
-                            CANCEL
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
-            {/* Header Card */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">Automated Triggers</h1>
-                    <p className="text-sm font-medium text-gray-400 mt-0.5">Engine rooms for system automation and recurring communications</p>
-                </div>
-                <button
-                    onClick={() => handleOpenForm()}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold text-sm cursor-pointer"
-                >
-                    <Plus size={18} className="mr-2" /> New Automation
-                </button>
-            </div>
+            {/* Header Section */}
+            <PageHeader 
+                title="Task Scheduler Master"
+                description="Engine rooms for system automation and recurring communications"
+                showBack={true}
+                onBack={() => navigate('/settings')}
+                action={
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold text-sm cursor-pointer"
+                    >
+                        <Plus size={18} className="mr-2" /> New Automation
+                    </button>
+                }
+            />
 
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 mb-6">
+            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="w-full md:w-96">
                     <Input 
                         placeholder="Search operations..." 
@@ -270,12 +152,28 @@ export const Scheduler: React.FC = () => {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleSearch}
+                        className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors shadow-sm"
+                        title="Filter"
+                    >
+                        <Filter size={20} />
+                    </button>
+                    <button
+                        onClick={handleClear}
+                        className="w-10 h-10 bg-white border border-gray-200 text-gray-500 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+                        title="Clear"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {isLoading ? (
                     [1,2,3].map(i => <div key={i} className="h-64 bg-white rounded-[2rem] animate-pulse border border-gray-100 shadow-sm" />)
-                ) : schedulers.map(s => (
+                ) : schedulers.map((s: SchedulerListDto) => (
                     <div key={s.schedulerIDP} className="bg-white rounded-[2.5rem] border border-gray-100 p-8 shadow-xl shadow-blue-500/5 hover:shadow-blue-500/10 transition-all group relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4">
                             <button onClick={() => handleDelete(s.schedulerIDP)} className="p-3 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-500 hover:text-white transition-all shadow-sm"><Trash2 size={18}/></button>
@@ -297,23 +195,28 @@ export const Scheduler: React.FC = () => {
                             </div>
                         </div>
 
-                        <Button onClick={() => handleOpenForm(s)} variant="outline" className="w-full rounded-2xl py-6 font-black border-2 border-gray-50 hover:border-blue-500 hover:text-blue-600 transition-all">
+                        <Button onClick={() => handleOpenModal(s)} variant="outline" className="w-full rounded-2xl py-6 font-black border-2 border-gray-50 hover:border-blue-500 hover:text-blue-600 transition-all">
                             MODIFY LOGIC
                         </Button>
                     </div>
                 ))}
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm mt-6">
-                <Pagination 
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    pageSize={pageSize}
-                    onPageSizeChange={setPageSize}
-                    totalCount={data?.totalCount || 0}
-                />
-            </div>
+            <DataPagination
+                totalItems={data?.totalCount || 0}
+                pageSize={appliedParams.pageSize}
+                currentPage={appliedParams.pageNo}
+                onPageChange={(p) => setAppliedParams(prev => ({ ...prev, pageNo: p }))}
+                onPageSizeChange={(s) => setAppliedParams(prev => ({ ...prev, pageSize: s, pageNo: 1 }))}
+            />
+
+            <SchedulerFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                schedulerId={formData.schedulerIDP}
+                onSuccess={() => refetch()}
+            />
         </div>
     );
 };
+

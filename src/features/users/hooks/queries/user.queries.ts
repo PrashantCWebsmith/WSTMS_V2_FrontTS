@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UserService } from '../../services/user.service';
-import type { UserSaveModel, UserFilterModel } from '../../types/user.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import { ActionStatusEnum } from '@/types/api.types';
+import type { UserCreateUpdateDto, UserFilterModel, UserReportingHierarchyModel } from '../../types/user.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing user data and state.
 
 // Hook to fetch paginated users data with optional filters.
-export const useUsers = (params: PagingParamsModel, filters?: UserFilterModel) => {
+export const useUsers = (params: CommonPagingRequestDto, filters?: UserFilterModel) => {
   return useQuery({
     queryKey: ['users', params, filters],
     queryFn: () => UserService.getAllPaging(params, filters),
@@ -26,7 +27,7 @@ export const useUser = (id: number) => {
 export const useUserLookups = () => {
   return useQuery({
     queryKey: ['user-lookups'],
-    queryFn: UserService.getAllLookup,
+    queryFn: UserService.getAll,
   });
 };
 
@@ -42,7 +43,7 @@ export const useUserReportingHierarchy = () => {
 export const useSaveUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: UserSaveModel) => UserService.save(data),
+    mutationFn: (data: UserCreateUpdateDto) => UserService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user-lookups'] });
@@ -54,7 +55,7 @@ export const useSaveUser = () => {
 export const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => UserService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => UserService.generalAction({ id, action: ActionStatusEnum.Status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },

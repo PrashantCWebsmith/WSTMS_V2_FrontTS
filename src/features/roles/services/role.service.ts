@@ -1,47 +1,49 @@
 import api from '@/api/axios-instance';
-import type { PagedResultModel, PagingParamsModel } from '@/types/paging.types';
+import { toast } from '@/utils/toast.utils';
+import type { ActionRequestDto, SQLReturnMessageNValue, ApiResponse } from '@/types/api.types';
+import { ActionStatusEnum } from '@/types/api.types';
+
+import type { PagedResult, CommonPagingRequestDto } from '@/types/paging.types';
 import type {
-  RoleModel,
-  RoleSaveModel,
-  RoleViewModel
+  RoleCreateUpdateDto,
+  RoleListDto,
+  RoleDto
 } from '../types/role.types';
 
-// Service for managing user role API interactions.
+// Service for managing role-related API interactions.
 export const RoleService = {
   // Fetch paginated roles for display.
-  getAllPaging: async (params: PagingParamsModel): Promise<PagedResultModel<RoleViewModel>> => {
-    let url = `/Role/GetPaging?page=${params.page}&size=${params.size}`;
-    if (params.search) url += `&search=${encodeURIComponent(params.search)}`;
-    const response = await api.get<PagedResultModel<RoleViewModel>>(url);
-    return response.data;
+  getAllPaging: async (params: CommonPagingRequestDto): Promise<PagedResult<RoleListDto>> => {
+    const response = await api.post<ApiResponse<PagedResult<RoleListDto>>>('/Role/GetPaging', params);
+    return response.data.data!;
   },
 
   // Fetch a single role by ID for display or editing.
-  getByID: async (id: number): Promise<RoleViewModel> => {
-    const response = await api.get<RoleViewModel>(`/Role/Get/${id}`);
-    return response.data;
+  getByID: async (id: number): Promise<RoleDto> => {
+    const response = await api.get<ApiResponse<RoleDto>>(`/Role/Get/${id}`);
+    return response.data.data!;
   },
 
   // Save or update a role entity.
-  save: async (data: RoleSaveModel): Promise<RoleModel> => {
-    const response = await api.post<RoleModel>('/Role/Save', data);
-    return response.data;
+  save: async (data: RoleCreateUpdateDto): Promise<SQLReturnMessageNValue> => {
+    const response = await api.post<ApiResponse<SQLReturnMessageNValue>>('/Role/Save', data);
+    return response.data.data!;
   },
 
   // Delete a role by ID.
-  delete: async (id: number): Promise<void> => {
-    return RoleService.generalAction(id, 'DELETE');
+  delete: async (id: number): Promise<SQLReturnMessageNValue> => {
+    return RoleService.generalAction({ id, action: ActionStatusEnum.Delete });
   },
 
   // Perform generalized actions like delete or status updates.
-  generalAction: async (id: number, action: string): Promise<void> => {
-    await api.put(`/Role/Action`, { id, action });
+  generalAction: async (params: ActionRequestDto): Promise<SQLReturnMessageNValue> => {
+    const response = await api.post<ApiResponse<SQLReturnMessageNValue>>(`/Role/Action`, params);
+    return response.data.data!;
   },
 
   // Fetch all roles for dropdown selections.
-  getAll: async (): Promise<RoleViewModel[]> => {
-    const response = await api.get('/Role/GetAll');
-    const data = response.data as any;
-    return data.data || data || [];
+  getAll: async (): Promise<RoleDto[]> => {
+    const response = await api.get<ApiResponse<RoleDto[]>>('/Role/GetAll');
+    return response.data.data || [];
   }
 };

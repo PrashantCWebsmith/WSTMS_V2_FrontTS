@@ -1,19 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import { LeaveService } from '../../services/leave.service';
-import type { LeaveSaveModel } from '../../types/leave.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { LeaveCreateUpdateDto } from '../../types/leave.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing leave data and state.
 
 // Hook to fetch and manage paginated leaves data.
-export const useLeaves = (params: PagingParamsModel) => {
+export const useLeaves = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['leaves', params],
     queryFn: () => LeaveService.getAllPaging(params),
   });
 };
 
-// Hook to fetch and manage a single leave record's data.
+// Hook to fetch and manage a single leave's data.
 export const useLeave = (id: number) => {
   return useQuery({
     queryKey: ['leaves', id],
@@ -26,7 +28,7 @@ export const useLeave = (id: number) => {
 export const useSaveLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: LeaveSaveModel) => LeaveService.save(data),
+    mutationFn: (data: LeaveCreateUpdateDto) => LeaveService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaves'] });
     },
@@ -37,7 +39,7 @@ export const useSaveLeave = () => {
 export const useDeleteLeave = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => LeaveService.delete(id),
+    mutationFn: (id: number) => LeaveService.generalAction({ id, action: ActionStatusEnum.Delete }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaves'] });
     },
@@ -48,7 +50,7 @@ export const useDeleteLeave = () => {
 export const useUpdateLeaveStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => LeaveService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => LeaveService.generalAction({ id, action: ActionStatusEnum.Status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaves'] });
     },

@@ -1,4 +1,4 @@
-export interface PagedResultModel<T> {
+export interface PagedResult<T> {
   data: T[];
   totalCount: number;
   pageNo: number;
@@ -6,8 +6,8 @@ export interface PagedResultModel<T> {
   totalPages: number;
 }
 
-export interface PagingParamsModel {
-  page: number;
-  size: number;
-  search?: string;
+export interface CommonPagingRequestDto {
+  pageNo: number;
+  pageSize: number;
+  searchValue?: string;
 }

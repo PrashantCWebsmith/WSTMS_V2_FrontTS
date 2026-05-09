@@ -1,95 +1,84 @@
-// interfaces for Model, ViewModel, and Persistence.
+import type { CommonPagingRequestDto, PagedResult } from "@/types/paging.types";
 
-// Model: Represents the core entity used for persistence.
-export interface TaskModel {
-  taskIDP: number;
-  taskTitle: string;
-  taskDescription: string;
+export interface TaskCreateUpdateDto {
+  taskIDP?: number;
+  taskNo: string;
   projectIDF: number;
-  taskStatusIDF: number;
   taskTypeIDF: number;
+  assignByIDF: number;
+  assignToIDF?: string | null;
+  taskTitle: string;
+  taskDescription?: string | null;
+  taskStatusIDF: number;
   priorityIDF: number;
-  assignToIDF: number;
-  deadlineDate: string;
-  startDate?: string;
-  estimatedHours: number;
-  actualHours: number;
+  startDate?: string | null;
+  deadlineDate?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
   progressPercent: number;
   isBlocked: boolean;
-  blockReason?: string;
-  remarks?: string;
-  assignByIDF?: number;
+  blockReason?: string | null;
+  remarks?: string | null;
 }
 
-// ViewModel: Represents the data structure used for display in the UI.
-export interface TaskViewModel {
+export interface TaskListDto {
   taskIDP: number;
   taskNo: string;
   taskTitle: string;
-  taskDescription: string;
   projectIDF: number;
+  assignToIDF: number;
+  taskStatusIDF: number;
+  priorityIDF: number;
+  deadlineDate?: string | null;
+  progressPercent: number;
+  isBlocked: boolean;
   projectName: string;
-  projectCode?: string;
-  taskStatusIDF: number;
-  taskStatus: string;
-  taskTypeIDF: number;
   taskType: string;
-  priorityIDF: number;
+  taskStatus: string;
   priorityName: string;
-  assignToIDF: number;
-  assignTo: string; // Keep for compatibility
-  assignToName?: string;
-  assignByIDF: number;
-  assignBy: string; // Keep for compatibility
-  assignByName?: string;
-  deadlineDate: string;
-  startDate?: string;
-  createdDate: string;
-  estimatedHours: number;
-  actualHours: number;
-  progressPercent: number;
-  isBlocked: boolean;
-  blockReason?: string;
-  remarks?: string;
-  isEditDelete?: boolean | number;
+  assignBy: string;
+  assignTo: string;
+  isEditDelete: boolean;
   timerStatus?: boolean;
-  totalTimeSeconds?: number;
-  totalTime?: string;
-  isStarted?: boolean;
+  projectCode?: string | null;
+  actualHoursSeconds: number;
+  estimatedHoursInSeconds: number;
 }
 
-// SaveModel: Represents the payload for creating or updating an entity.
-export interface TaskSaveModel {
-  taskIDP?: number;
-  taskTitle: string;
-  taskDescription: string;
+export interface TaskDto {
+  taskIDP: number;
+  taskNo: string;
   projectIDF: number;
-  taskStatusIDF: number;
   taskTypeIDF: number;
+  assignByIDF: number;
+  assignToIDF?: string | null;
+  taskTitle: string;
+  taskDescription?: string | null;
+  taskStatusIDF: number;
   priorityIDF: number;
-  assignToIDF: number;
-  deadlineDate: string;
-  startDate?: string;
-  estimatedHours: number;
-  actualHours: number;
+  startDate?: string | null;
+  deadlineDate?: string | null;
+  estimatedHours?: number | null;
+  actualHours?: number | null;
   progressPercent: number;
   isBlocked: boolean;
-  blockReason?: string;
-  remarks?: string;
-  assignByIDF?: number;
+  blockReason?: string | null;
+  remarks?: string | null;
 }
-
-import type { PagedResultModel } from '@/types/paging.types';
 
 // PagingModel: Represents the paginated response containing a collection of ViewModels.
-export type TaskPagingModel = PagedResultModel<TaskViewModel>;
+export type TaskPagingModel = PagedResult<TaskListDto>;
 
+export interface TaskPagingFilterDto extends CommonPagingRequestDto {
+  projectIDF?: number | null;
+  assignToIDF?: number | null;
+  taskStatusIDF?: number | null;
+}
 // FilterModel: Represents the filter parameters for lists.
 export interface TaskFilterModel {
   projectIDF: number;
   assignToIDF: number;
   taskStatusIDF: number;
-  searchTerm?: string;
 }
 
 // Model: Supporting data structure for the main entity.
@@ -157,7 +146,7 @@ export interface TaskTimeLogModel {
 
 // ViewModel: Represents a complex display structure containing the entity and its relations.
 export interface TaskDetailedViewModel {
-  task: TaskViewModel;
+  task: TaskDto;
   statusHistory: StatusHistoryModel[];
   documents: TaskDocumentModel[];
   comments: TaskCommentModel[];

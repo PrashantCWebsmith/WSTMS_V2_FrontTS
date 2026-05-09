@@ -52,9 +52,9 @@ const QuickLink = ({ label, icon: Icon, path }: any) => (
 
 export const AdminDashboard: React.FC = () => {
     // API Data Fetching
-    const { data: usersRes } = useUsers({ page: 1, size: 1 });
-    const { data: projectsRes } = useProjects({ page: 1, size: 5 }); 
-    const { data: incidentsRes } = useIncidents({ page: 1, size: 5 }); 
+    const { data: usersRes } = useUsers({ pageNo: 1, pageSize: 1 });
+    const { data: projectsRes } = useProjects({ pageNo: 1, pageSize: 5 }); 
+    const { data: incidentsRes } = useIncidents({ pageNo: 1, pageSize: 5 }); 
 
     const stats = {
         users: usersRes?.totalCount || 0,
@@ -148,7 +148,7 @@ export const AdminDashboard: React.FC = () => {
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
                             <h3 className="text-sm font-black uppercase text-gray-400 tracking-[0.2em] mb-6">Project Health Distribution</h3>
                             <div className="h-64 w-full min-h-[256px]">
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={100}>
                                     <PieChart>
                                         <Pie
                                             data={projectDistribution}
@@ -178,7 +178,7 @@ export const AdminDashboard: React.FC = () => {
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
                             <h3 className="text-sm font-black uppercase text-gray-400 tracking-[0.2em] mb-6">Team Velocity (Hrs)</h3>
                             <div className="h-64 w-full min-h-[256px]">
-                                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={100}>
                                     <AreaChart data={revenueData}>
                                         <defs>
                                             <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">

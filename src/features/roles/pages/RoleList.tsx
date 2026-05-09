@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     Search,
     Filter,
@@ -6,49 +6,76 @@ import {
     Edit2,
     Trash2,
     Shield,
-    ArrowLeft,
     CheckCircle,
     XCircle,
     X
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/page-header';
+import { useNavigate } from 'react-router-dom';
 import { useRoles, useUpdateRoleStatus, useDeleteRole } from '../hooks/queries/role.queries';
 import Swal from 'sweetalert2';
-import { toast } from '@/utils/toast.utils';
+import { toast, handleActionResult } from '@/utils/toast.utils';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
-import type { RoleViewModel } from '../types/role.types';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import type { RoleListDto, RoleCreateUpdateDto } from '../types/role.types';
+import { DataPagination } from '@/components/ui/DataPagination';
+import { RoleFormModal } from '../components/RoleFormModal';
 
 export const RoleList: React.FC = () => {
     const navigate = useNavigate();
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
     const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formData, setFormData] = useState<RoleCreateUpdateDto>({
+        roleIDP: 0,
+        roleName: '',
+        status: true
+    });
 
-    // Debounce search term
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
-            setPage(1);
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [searchTerm]);
+    const [appliedParams, setAppliedParams] = useState({
+        pageNo: 1,
+        pageSize: 10,
+        searchValue: ''
+    });
 
-    const { data, isLoading } = useRoles({ page, size: pageSize, search: debouncedSearch });
+    const { data, isLoading, refetch } = useRoles({ 
+        pageNo: appliedParams.pageNo, 
+        pageSize: appliedParams.pageSize, 
+        searchValue: appliedParams.searchValue 
+    });
     const statusMutation = useUpdateRoleStatus();
     const deleteMutation = useDeleteRole();
 
+    const handleOpenModal = (item?: RoleListDto) => {
+        if (item) {
+            setFormData({
+                roleIDP: item.roleIDP,
+                roleName: item.roleName,
+                status: item.status
+            });
+        } else {
+            setFormData({
+                roleIDP: 0,
+                roleName: '',
+                status: true
+            });
+        }
+        setIsModalOpen(true);
+    };
+
     const handleSearch = () => {
-        setDebouncedSearch(searchTerm);
-        setPage(1);
+        setAppliedParams(prev => ({
+            ...prev,
+            searchValue: searchTerm,
+            pageNo: 1
+        }));
     };
 
     const handleClear = () => {
         setSearchTerm('');
-        setDebouncedSearch('');
-        setPage(1);
+        setAppliedParams({
+            pageNo: 1,
+            pageSize: appliedParams.pageSize,
+            searchValue: ''
+        });
     };
 
     const handleStatusUpdate = async (id: number, currentStatus: boolean) => {
@@ -63,12 +90,8 @@ export const RoleList: React.FC = () => {
         });
 
         if (result.isConfirmed) {
-            try {
-                await statusMutation.mutateAsync(id);
-                toast.success(`Role has been ${action}d.`);
-            } catch (error) {
-                toast.error('Failed to update status');
-            }
+            const res = await statusMutation.mutateAsync(id);
+            handleActionResult(res);
         }
     };
 
@@ -83,12 +106,8 @@ export const RoleList: React.FC = () => {
         });
 
         if (result.isConfirmed) {
-            try {
-                await deleteMutation.mutateAsync(id);
-                toast.success('Role has been deleted.');
-            } catch (error) {
-                toast.error('Failed to delete role');
-            }
+            const res = await deleteMutation.mutateAsync(id);
+            handleActionResult(res);
         }
     };
 
@@ -96,29 +115,21 @@ export const RoleList: React.FC = () => {
     const totalItems = data?.totalCount || 0;
 
     return (
-        <div className="p-6 space-y-6 w-full overflow-hidden">
-            {/* Header Card */}
-            {/* Header Card */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">Role Management</h1>
-                    <p className="text-sm font-medium text-gray-400 mt-0.5">Manage system access levels and permissions</p>
-                </div>
-                <div className="flex gap-2">
+        <div className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 w-full overflow-hidden">
+            <PageHeader 
+                title="Role Master"
+                description="Manage system access levels and permissions"
+                showBack={true}
+                onBack={() => navigate('/settings')}
+                action={
                     <button
-                        onClick={() => navigate('/roles/new')}
+                        onClick={() => handleOpenModal()}
                         className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold text-sm cursor-pointer"
                     >
                         <Plus size={18} className="mr-2" /> Add New Role
                     </button>
-                    <button
-                        onClick={() => navigate('/settings')}
-                        className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-semibold text-sm cursor-pointer"
-                    >
-                        <ArrowLeft size={18} className="mr-2" /> Back
-                    </button>
-                </div>
-            </div>
+                }
+            />
 
             {/* Table Card */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
@@ -166,11 +177,11 @@ export const RoleList: React.FC = () => {
                             {isLoading ? (
                                 <TableSkeleton columns={3} />
                             ) : roles.length > 0 ? (
-                                roles.map((r: RoleViewModel) => (
+                                roles.map((r: RoleListDto) => (
                                     <tr key={r.roleIDP} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button onClick={() => navigate(`/roles/${r.roleIDP}/edit`)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit">
+                                                <button onClick={() => handleOpenModal(r)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit">
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button onClick={() => handleDelete(r.roleIDP)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Delete">
@@ -214,41 +225,23 @@ export const RoleList: React.FC = () => {
                     </table>
                 </div>
 
-                {/* Pagination Section */}
-                <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="text-sm text-gray-700">
-                            Showing <span className="font-medium">{Math.min((page - 1) * pageSize + 1, totalItems)}</span> to <span className="font-medium">{Math.min(page * pageSize, totalItems)}</span> of <span className="font-medium">{totalItems}</span> results
-                        </div>
-                        <div className="flex flex-wrap items-center justify-center gap-4">
-                            <div className="w-32">
-                                <SearchableSelect
-                                    options={[10, 20, 50, 100].map(size => ({ value: size, label: `Show ${size}` }))}
-                                    value={pageSize}
-                                    onChange={(val) => setPageSize(Number(val))}
-                                    isSearchable={false}
-                                />
-                            </div>
-                            <div className="flex items-center -space-x-px shadow-sm rounded-md">
-                                <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed first:rounded-l-lg last:rounded-r-lg"
-                                >
-                                    Previous
-                                </button>
-                                <button
-                                    onClick={() => setPage(p => p + 1)}
-                                    disabled={page * pageSize >= totalItems}
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed first:rounded-l-lg last:rounded-r-lg"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <DataPagination
+                    totalItems={totalItems}
+                    pageSize={appliedParams.pageSize}
+                    currentPage={appliedParams.pageNo}
+                    onPageChange={(p) => setAppliedParams(prev => ({ ...prev, pageNo: p }))}
+                    onPageSizeChange={(s) => setAppliedParams(prev => ({ ...prev, pageSize: s, pageNo: 1 }))}
+                />
             </div>
+
+            <RoleFormModal
+                isOpen={isModalOpen}
+                onClose={() => {
+                    setIsModalOpen(false);
+                }}
+                roleId={formData.roleIDP}
+                onSuccess={() => refetch()}
+            />
         </div>
     );
 };

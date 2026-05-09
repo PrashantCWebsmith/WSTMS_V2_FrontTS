@@ -61,9 +61,11 @@ export const TimeTrackingProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setElapsedTime((prev) => prev + 1);
       }, 1000);
     } else {
-      clearInterval(timerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     }
-    return () => clearInterval(timerRef.current);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [isRunning]);
 
   const formatTime = (totalSeconds: number) => {

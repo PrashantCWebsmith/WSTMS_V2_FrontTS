@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import { EmployeeDocumentService } from '../../services/employee-document.service';
 
 // React Query hooks for managing employee document data.

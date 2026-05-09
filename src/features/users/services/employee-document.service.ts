@@ -1,7 +1,9 @@
 import api from '@/api/axios-instance';
+import type { ActionRequestDto } from '@/types/api.types';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import type {
-  EmployeeDocumentViewModel,
-  EmployeeDocumentModel
+  EmployeeDocumentViewModel
 } from '../types/employee-document.types';
 
 /**

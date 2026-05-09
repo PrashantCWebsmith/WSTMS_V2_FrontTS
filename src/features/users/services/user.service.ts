@@ -1,9 +1,12 @@
 import api from '@/api/axios-instance';
-import type { PagedResultModel, PagingParamsModel } from '@/types/paging.types';
-import type { 
-  UserModel, 
-  UserSaveModel, 
-  UserViewModel,
+import { toast } from '@/utils/toast.utils';
+import type { PagedResult, CommonPagingRequestDto } from '@/types/paging.types';
+import type { SQLReturnMessageNValue, ActionRequestDto, ApiResponse } from '@/types/api.types';
+import { ActionStatusEnum } from '@/types/api.types';
+import type {
+  UserCreateUpdateDto,
+  UserListDto,
+  UserDto,
   UserFilterModel,
   UserReportingHierarchyModel
 } from '../types/user.types';
@@ -11,52 +14,48 @@ import type {
 // Service for managing user-related API interactions.
 export const UserService = {
   // Fetch paginated users for display with optional filters.
-  getAllPaging: async (params: PagingParamsModel, filters?: UserFilterModel): Promise<PagedResultModel<UserViewModel>> => {
-    let url = `/User/GetPaging?page=${params.page}&size=${params.size}`;
-    const search = params.search || filters?.search;
-    if (search) {
-      url += `&search=${encodeURIComponent(search)}`;
-    }
-    if (filters?.roleIDF && filters.roleIDF > 0) {
-      url += `&roleIDF=${filters.roleIDF}`;
-    }
-    const response = await api.get<PagedResultModel<UserViewModel>>(url);
-    return response.data;
+  getAllPaging: async (params: CommonPagingRequestDto, filters?: UserFilterModel): Promise<PagedResult<UserListDto>> => {
+    const payload = {
+      ...params,
+      roleIDF: filters?.roleIDF || 0,
+      status: filters?.status === undefined ? null : filters.status
+    };
+    const response = await api.post<ApiResponse<PagedResult<UserListDto>>>('/User/GetPaging', payload);
+    return response.data.data!;
   },
 
   // Fetch a single user by ID for display or editing.
-  getByID: async (id: number): Promise<UserViewModel> => {
-    const response = await api.get<UserViewModel>(`/User/Get/${id}`);
-    return response.data;
+  getByID: async (id: number): Promise<UserDto> => {
+    const response = await api.get<ApiResponse<UserDto>>(`/User/Get/${id}`);
+    return response.data.data!;
   },
 
   // Save or update a user entity.
-  save: async (data: UserSaveModel): Promise<UserModel> => {
-    const response = await api.post<UserModel>('/User/Save', data);
-    return response.data;
+  save: async (data: UserCreateUpdateDto): Promise<SQLReturnMessageNValue> => {
+    const response = await api.post<ApiResponse<SQLReturnMessageNValue>>('/User/Save', data);
+    return response.data.data!;
   },
 
   // Delete a user by ID.
-  delete: async (id: number): Promise<void> => {
-    return UserService.generalAction(id, 'DELETE');
+  delete: async (id: number): Promise<SQLReturnMessageNValue> => {
+    return UserService.generalAction({ id, action: ActionStatusEnum.Delete });
   },
 
   // Perform generalized actions like delete or status updates.
-  generalAction: async (id: number, action: string): Promise<void> => {
-    await api.put(`/User/Action`, { id, action });
-  },
-
-  // Fetch all users formatted for lookup purposes.
-  getAllLookup: async (): Promise<UserViewModel[]> => {
-    const response = await api.get<UserViewModel[]>('/User/GetAll');
-    const data = response.data as any;
-    return data.data || data || [];
+  generalAction: async (params: ActionRequestDto): Promise<SQLReturnMessageNValue> => {
+    const response = await api.post<ApiResponse<SQLReturnMessageNValue>>(`/User/Action`, params);
+    return response.data.data!;
   },
 
   // Fetch user reporting hierarchy for management views.
   getReportingHierarchy: async (): Promise<UserReportingHierarchyModel[]> => {
-    const response = await api.get<UserReportingHierarchyModel[]>('/User/GetReportingHierarchy');
-    const data = response.data as any;
-    return data.data || data || [];
+    const response = await api.get<ApiResponse<UserReportingHierarchyModel[]>>('/User/GetReportingHierarchy');
+    return response.data.data || [];
+  },
+
+  // Fetch all users formatted for lookup purposes.
+  getAll: async (): Promise<UserDto[]> => {
+    const response = await api.get<ApiResponse<UserDto[]>>('/User/GetAll');
+    return response.data.data || [];
   }
 };

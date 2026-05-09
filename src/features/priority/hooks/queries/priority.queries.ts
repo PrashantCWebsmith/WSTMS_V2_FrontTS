@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import { PriorityService } from '../../services/priority.service';
-import type { PrioritySaveModel } from '../../types/priority.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { PriorityCreateUpdateDto } from '../../types/priority.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing task priority data and state.
 
 // Hook to fetch and manage paginated priorities data.
-export const usePriorities = (params: PagingParamsModel) => {
+export const usePriorities = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['priorities', params],
     queryFn: () => PriorityService.getAllPaging(params),
@@ -26,7 +28,7 @@ export const usePriority = (id: number) => {
 export const useSavePriority = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: PrioritySaveModel) => PriorityService.save(data),
+    mutationFn: (data: PriorityCreateUpdateDto) => PriorityService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priorities'] });
     },
@@ -37,7 +39,7 @@ export const useSavePriority = () => {
 export const useUpdatePriorityStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => PriorityService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => PriorityService.generalAction({ id, action: ActionStatusEnum.Status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priorities'] });
     },
@@ -48,7 +50,7 @@ export const useUpdatePriorityStatus = () => {
 export const useDeletePriority = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => PriorityService.delete(id),
+    mutationFn: (id: number) => PriorityService.generalAction({ id, action: ActionStatusEnum.Delete }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priorities'] });
     },

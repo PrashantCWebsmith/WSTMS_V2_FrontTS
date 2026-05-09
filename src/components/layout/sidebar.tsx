@@ -12,8 +12,7 @@ import {
   Calendar,
   LogOut,
   ShieldAlert,
-  ChevronRight,
-  Shield
+  ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/providers/auth-provider';
 import { cn } from '@/utils/cn';
@@ -32,7 +31,7 @@ const menuItems = [
   { icon: Users, label: 'Users', path: '/users', roles: ['Super Admin', 'Admin'], relatedPaths: ['/users/'] },
   { icon: Clock, label: 'Time Tracking', path: '/reports/time-tracking' },
   { icon: FileText, label: 'Reports', path: '/reports', end: true },
-  { icon: Settings, label: 'Settings', path: '/settings', roles: ['Super Admin', 'Admin', 'Super Admin'], relatedPaths: ['/task-status', '/task-type', '/priority', '/smtp', '/scheduler'] },
+  { icon: Settings, label: 'Settings', path: '/settings', roles: ['Super Admin', 'Admin'], relatedPaths: ['/task-status', '/task-type', '/priority', '/smtp', '/scheduler'] },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {

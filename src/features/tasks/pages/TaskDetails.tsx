@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useTaskDetailed } from '../hooks/queries/task.queries';
 import Swal from 'sweetalert2';
 import { toast } from '@/utils/toast.utils';
-import { useSaveTaskDocument, useDeleteTaskDocument } from '../hooks/queries/task-document.queries';
+import { useDeleteTaskDocument } from '../hooks/queries/task-document.queries';
 import { TaskStatusModal } from '../components/TaskStatusModal';
 import { TaskCommentModal } from '../components/TaskCommentModal';
 import { TaskDocumentModal } from '../components/TaskDocumentModal';

@@ -1,4 +1,5 @@
 import api from '@/api/axios-instance';
+import type { ApiResponse } from '@/types/api.types';
 import type { 
   TimeTrackingViewModel, 
   TimeTrackingFilterModel 
@@ -8,8 +9,7 @@ import type {
 export const ReportService = {
   // Fetch the time tracking report based on selected filters.
   getTimeTracking: async (filters: TimeTrackingFilterModel): Promise<TimeTrackingViewModel[]> => {
-    const response = await api.post('/Task/TimeTracking', filters);
-    const data = response.data as any;
-    return data.data || data || [];
+    const response = await api.post<ApiResponse<TimeTrackingViewModel[]>>('/Task/TimeTracking', filters);
+    return response.data.data || [];
   }
 };

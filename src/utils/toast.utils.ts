@@ -69,3 +69,28 @@ export const toast = {
     });
   }
 };
+
+/**
+ * Standardized handler for SQLReturnMessageNValue API responses.
+ * Maps outval codes to appropriate UI notifications.
+ */
+export const handleActionResult = (res: { outval: any, outmsg: string }) => {
+  if (!res) return;
+  const outval = Number(res.outval);
+  const outmsg = res.outmsg || '';
+
+  if (outval === 1) {
+    if (outmsg) toast.success(outmsg);
+  } else if (outval === 0) {
+    if (outmsg) toast.error(outmsg);
+  } else if (outval === 99) {
+    import('sweetalert2').then((Swal) => {
+      Swal.default.fire({
+        title: 'Attention',
+        text: outmsg,
+        icon: 'warning',
+        confirmButtonColor: '#4f46e5',
+      });
+    });
+  }
+};

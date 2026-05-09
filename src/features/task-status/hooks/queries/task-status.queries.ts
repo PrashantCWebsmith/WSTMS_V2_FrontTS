@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TaskStatusService } from '../../services/task-status.service';
-import type { TaskStatusSaveModel } from '../../types/task-status.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { TaskStatusCreateUpdateDto } from '../../types/task-status.types';
+import { TaskStatusActionStatusEnum } from '../../types/task-status.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing task status data and state.
 
 // Hook to fetch and manage paginated task statuses data.
-export const useTaskStatuses = (params: PagingParamsModel) => {
+export const useTaskStatuses = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['task-statuses', params],
     queryFn: () => TaskStatusService.getAllPaging(params),
@@ -26,7 +27,7 @@ export const useTaskStatus = (id: number) => {
 export const useSaveTaskStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: TaskStatusSaveModel) => TaskStatusService.save(data),
+    mutationFn: (data: TaskStatusCreateUpdateDto) => TaskStatusService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-statuses'] });
     },
@@ -37,7 +38,7 @@ export const useSaveTaskStatus = () => {
 export const useUpdateTaskStatusActive = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => TaskStatusService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => TaskStatusService.generalAction({ id, action: TaskStatusActionStatusEnum.Status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-statuses'] });
     },
@@ -48,7 +49,7 @@ export const useUpdateTaskStatusActive = () => {
 export const useDeleteTaskStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => TaskStatusService.delete(id),
+    mutationFn: (id: number) => TaskStatusService.generalAction({ id, action: TaskStatusActionStatusEnum.Delete }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-statuses'] });
     },
@@ -59,7 +60,7 @@ export const useDeleteTaskStatus = () => {
 export const useUpdateKanbanVisibility = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => TaskStatusService.generalAction(id, 'KANBAN_VISIBILITY'),
+    mutationFn: (id: number) => TaskStatusService.generalAction({ id, action: TaskStatusActionStatusEnum.Kanban }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['task-statuses'] });
     },

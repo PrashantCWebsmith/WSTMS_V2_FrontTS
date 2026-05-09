@@ -1,19 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import { SMTPService } from '../../services/smtp.service';
-import type { SMTPSaveModel } from '../../types/smtp.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { SMTPCreateUpdateDto } from '../../types/smtp.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing SMTP configuration data and state.
 
-// Hook to fetch paginated SMTP settings data.
-export const useSMTPs = (params: PagingParamsModel) => {
+// Hook to fetch and manage paginated SMTP configurations data.
+export const useSMTPs = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['smtps', params],
     queryFn: () => SMTPService.getAllPaging(params),
   });
 };
 
-// Hook to fetch and manage a single SMTP setting's data.
+// Hook to fetch and manage a single SMTP configuration's data.
 export const useSMTP = (id: number) => {
   return useQuery({
     queryKey: ['smtps', id],
@@ -22,11 +24,11 @@ export const useSMTP = (id: number) => {
   });
 };
 
-// Hook to handle saving or updating an SMTP setting entity.
+// Hook to handle saving or updating an SMTP configuration entity.
 export const useSaveSMTP = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: SMTPSaveModel) => SMTPService.save(data),
+    mutationFn: (data: SMTPCreateUpdateDto) => SMTPService.save(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['smtps'] }),
   });
 };
@@ -35,7 +37,7 @@ export const useSaveSMTP = () => {
 export const useUpdateSMTPStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => SMTPService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => SMTPService.generalAction({ id, action: ActionStatusEnum.Status }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['smtps'] }),
   });
 };
@@ -44,7 +46,7 @@ export const useUpdateSMTPStatus = () => {
 export const useDeleteSMTP = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => SMTPService.delete(id),
+    mutationFn: (id: number) => SMTPService.generalAction({ id, action: ActionStatusEnum.Delete }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['smtps'] }),
   });
 };

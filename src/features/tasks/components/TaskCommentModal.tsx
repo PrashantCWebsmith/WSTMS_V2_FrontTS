@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MessageCircle, Send, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Send, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from '@/utils/toast.utils';
 import { useSaveTaskComment } from '../hooks/queries/task-comment.queries';
 

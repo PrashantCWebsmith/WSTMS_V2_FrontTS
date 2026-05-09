@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { X, Clock, Square, Save, Briefcase, User, AlignLeft, Type, CheckSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Clock, Square, AlignLeft, Type } from 'lucide-react';
 import Select from 'react-select';
 import { useAuth } from '@/providers/auth-provider';
 import { useTaskLookups, useProjectUsers, useSaveTask } from '../hooks/queries/task.queries';
 import { useSaveTaskComment } from '../hooks/queries/task-comment.queries';
-import Swal from 'sweetalert2';
 import { toast } from '@/utils/toast.utils';
 
 interface QuickTimerModalProps {

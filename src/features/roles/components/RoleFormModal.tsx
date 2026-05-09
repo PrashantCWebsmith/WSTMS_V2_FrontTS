@@ -1,26 +1,33 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Shield } from 'lucide-react';
 import { useRole, useSaveRole } from '../hooks/queries/role.queries';
-import { toast } from '@/utils/toast.utils';
+import { toast, handleActionResult } from '@/utils/toast.utils';
 import { roleSchema, type RoleFormValues } from '../validation/role.validation';
+import { Modal } from '@/components/ui/modal';
 
-export const RoleForm: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
-    const isEditing = !!id;
-    const roleId = parseInt(id || '0');
+interface RoleFormModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    roleId?: number | null;
+    onSuccess?: () => void;
+}
 
-    const { data: role, isLoading: isFetching } = useRole(roleId);
+export const RoleFormModal: React.FC<RoleFormModalProps> = ({
+    isOpen,
+    onClose,
+    roleId,
+    onSuccess
+}) => {
+    const isEditing = !!roleId;
+    const { data: role, isLoading: isFetching } = useRole(roleId || 0);
     const saveMutation = useSaveRole();
 
     const {
         register,
         handleSubmit,
         reset,
-        formState: { errors, isSubmitting },
+        formState: { errors },
     } = useForm<RoleFormValues>({
         resolver: zodResolver(roleSchema),
         defaultValues: {
@@ -31,50 +38,51 @@ export const RoleForm: React.FC = () => {
     });
 
     useEffect(() => {
-        if (role) {
+        if (!isOpen) {
+            reset({
+                roleIDP: 0,
+                roleName: '',
+                status: true,
+            });
+            return;
+        }
+
+        if (role && isEditing) {
             reset({
                 roleIDP: role.roleIDP,
                 roleName: role.roleName,
                 status: !!role.status,
             });
+        } else if (!isEditing) {
+            reset({
+                roleIDP: 0,
+                roleName: '',
+                status: true,
+            });
         }
-    }, [role, reset]);
+    }, [role, reset, isOpen, isEditing]);
 
     const onFormSubmit = async (formData: RoleFormValues) => {
-        try {
-            await saveMutation.mutateAsync({ ...formData, roleIDP: isEditing ? roleId : 0 });
-            toast.success(`Role ${isEditing ? 'updated' : 'created'} successfully`);
-            navigate('/roles');
-        } catch (error) {
-            toast.error(`Failed to ${isEditing ? 'update' : 'create'} role`);
+        const result = await saveMutation.mutateAsync({ ...formData, roleIDP: isEditing ? roleId : 0 });
+        handleActionResult(result);
+        if (result?.outval === 1) {
+            onSuccess?.();
+            onClose();
         }
     };
 
-    if (isEditing && isFetching) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-            </div>
-        );
-    }
-
     return (
-        <div className="p-6 max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500">
-            {/* Header Card */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">{isEditing ? 'Edit Role' : 'New Role'}</h1>
-                    <p className="text-sm font-medium text-gray-400 mt-0.5">{isEditing ? 'Update existing system privileges' : 'Create a new access level'}</p>
+        <Modal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={isEditing ? 'Edit Role' : 'New Role'}
+            size="md"
+        >
+            {isEditing && isFetching ? (
+                <div className="flex items-center justify-center p-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
                 </div>
-                <button
-                    onClick={() => navigate('/roles')}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center transition-colors shadow-sm cursor-pointer"
-                >
-                    <ArrowLeft size={18} className="mr-2" /> Back
-                </button>
-            </div>
-
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
+            ) : (
                 <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
                     <div className="space-y-4">
                         <div>
@@ -84,12 +92,12 @@ export const RoleForm: React.FC = () => {
                                 className={`w-full border rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${errors.roleName ? 'border-red-300' : 'border-gray-300'}`}
                                 placeholder="Enter role name"
                             />
-                            {errors.roleName && <p className="mt-1 text-xs text-red-500 font-bold">{errors.roleName.message}</p>}
+                            {errors.roleName && <p className="mt-1 text-[10px] text-red-500 uppercase font-bold">{errors.roleName.message}</p>}
                         </div>
 
                         <div className="flex flex-col gap-2">
                             <label className="text-[10px] font-black uppercase text-gray-400 tracking-[0.2em]">Status</label>
-                            <label className="relative inline-flex items-center cursor-pointer group w-fit">
+                            <label className="relative inline-flex items-center cursor-pointer group w-fit mt-1">
                                 <input 
                                     type="checkbox" 
                                     {...register('status')} 
@@ -103,24 +111,24 @@ export const RoleForm: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                         <button
                             type="button"
-                            onClick={() => navigate('/roles')}
-                            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                            onClick={onClose}
+                            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={saveMutation.isPending}
-                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50 cursor-pointer"
+                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50"
                         >
-                            {isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Role')}
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Role')}
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            )}
+        </Modal>
     );
 };

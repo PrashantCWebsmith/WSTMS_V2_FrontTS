@@ -2,22 +2,18 @@ import React, { useState } from 'react';
 import { useAuth } from '@/providers/auth-provider';
 import { TaskList } from '@/features/tasks/pages/TaskList';
 import { useTimeTracking } from '@/providers/time-tracking-provider';
-import { useNavigate } from 'react-router-dom';
 import {
     Activity,
     MessageCircle,
     Users,
     Calendar,
-    Briefcase,
-    Square,
-    Clock
+    Briefcase
 } from 'lucide-react';
 
 import { QuickTimerModal } from '@/features/tasks/components/QuickTimerModal';
 
 export const EmployeeDashboard: React.FC = () => {
     const { user } = useAuth();
-    const navigate = useNavigate();
     const { isRunning, formatTime, elapsedTime } = useTimeTracking();
 
     const [isTimerModalOpen, setIsTimerModalOpen] = useState(false);

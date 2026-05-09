@@ -1,4 +1,5 @@
 import api from '@/api/axios-instance';
+import type { ApiResponse } from '@/types/api.types';
 import type { 
   ProfileViewModel, 
   ProfileSaveModel 
@@ -8,9 +9,8 @@ import type {
 export const ProfileService = {
   // Fetch user profile data for display.
   get: async (id: number): Promise<ProfileViewModel> => {
-    const response = await api.get<ProfileViewModel>(`/User/Get/${id}`);
-    const data = response.data as any;
-    return data.data || data;
+    const response = await api.get<ApiResponse<ProfileViewModel>>(`/User/Get/${id}`);
+    return response.data.data!;
   },
 
   // Update user profile information.

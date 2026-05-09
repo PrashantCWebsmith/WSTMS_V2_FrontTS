@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import { ProjectService } from '../../services/project.service';
-import type { ProjectSaveModel } from '../../types/project.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { ProjectCreateUpdateDto } from '../../types/project.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing project data and state.
 
 // Hook to fetch and manage paginated projects data.
-export const useProjects = (params: PagingParamsModel) => {
+export const useProjects = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['projects', params],
     queryFn: () => ProjectService.getAllPaging(params),
@@ -26,7 +28,7 @@ export const useProject = (id: number) => {
 export const useSaveProject = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: ProjectSaveModel) => ProjectService.save(data),
+    mutationFn: (data: ProjectCreateUpdateDto) => ProjectService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
@@ -37,7 +39,7 @@ export const useSaveProject = () => {
 export const useUpdateProjectStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => ProjectService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => ProjectService.generalAction({ id, action: ActionStatusEnum.Status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     },

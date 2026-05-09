@@ -1,68 +1,52 @@
-// interfaces for Model, ViewModel, and Persistence.
-
-// Model: Represents the core entity used for persistence.
-export interface UserModel {
-  userIDP: number;
-  userName: string;
-  userFullName: string;
-  emailID: string;
-  mobileNo: string;
-  address: string;
-  employeeCode: string;
-  joiningDate: string;
-  roleIDF: number;
-  roleName: string;
-  reportingManagerIDF: number;
-  reportingManagerName: string;
-  status: boolean;
-  password?: string;
-}
-
-// ViewModel: Represents the data structure used for display in the UI.
-export interface UserViewModel {
-  userIDP: number;
-  userName: string;
-  userFullName: string;
-  emailID: string;
-  mobileNo: string;
-  address: string;
-  employeeCode: string;
-  joiningDate: string;
-  roleIDF: number;
-  roleName: string;
-  reportingManagerIDF: number;
-  reportingManagerName: string;
-  status: boolean;
-}
-
-// SaveModel: Represents the payload for creating or updating an entity.
-export interface UserSaveModel {
+export interface UserCreateUpdateDto {
   userIDP?: number;
   userName: string;
   password?: string;
-  emailID: string;
-  mobileNo: string;
-  userFullName: string;
-  address: string;
+  emailID?: string | null;
+  mobileNo?: string | null;
   roleIDF: number;
-  employeeCode: string;
-  joiningDate: string;
-  reportingManagerIDF: number;
+  employeeCode?: string | null;
+  joiningDate?: string | null;
+  reportingManagerIDF?: number | null;
+  status: boolean;
+  userFullName?: string | null;
+  address?: string | null;
+}
+
+export interface UserListDto {
+  userIDP: number;
+  userName: string;
+  userFullName?: string | null;
+  emailID?: string | null;
+  mobileNo?: string | null;
+  roleName?: string | null;
+  reportingManagerName?: string | null;
   status: boolean;
 }
 
+export interface UserDto {
+  userIDP: number;
+  userName: string;
+  userFullName?: string | null;
+  emailID?: string | null;
+  mobileNo?: string | null;
+  address?: string | null;
+  employeeCode?: string | null;
+  joiningDate?: string | null;
+  roleIDF: number;
+  roleName?: string | null;
+  reportingManagerIDF?: number | null;
+  reportingManagerName?: string | null;
+  status: boolean;
+}
 
-// FilterModel: Represents the filter parameters for lists.
 export interface UserFilterModel {
   roleIDF?: number;
   status?: boolean;
-  search?: string;
 }
 
-// Entity Model: Represents additional core data structures related to the entity.
 export interface UserReportingHierarchyModel {
-  userIDP: number;
-  userName: string;
-  userFullName?: string;
-  reportingManagerIDF?: number;
+  id: number;
+  label: string;
+  children?: UserReportingHierarchyModel[];
 }

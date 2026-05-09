@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { Calendar, Filter, Search, X, FileText, Loader2 } from 'lucide-react';
+import { Calendar, Filter, Search, FileText, Loader2 } from 'lucide-react';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
-import { Skeleton } from '@/components/ui/Skeleton';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { SearchableSelect } from '@/components/ui/SearchableSelect';
-import { toast } from '@/utils/toast.utils';
 
 // Services & Hooks
 import { useTimeTrackingReport } from '../hooks/queries/report.queries';
@@ -44,11 +42,11 @@ export const TimeTrackingReport: React.FC = () => {
     );
 
     // Dropdown Data
-    const { data: projectsRes } = useProjects({ page: 1, size: 1000 });
-    const { data: taskTypesRes } = useTaskTypes({ page: 1, size: 1000 });
-    const { data: usersRes } = useUsers({ page: 1, size: 1000 });
-    const { data: prioritiesRes } = usePriorities({ page: 1, size: 1000 });
-    const { data: taskStatusesRes } = useTaskStatuses({ page: 1, size: 1000 });
+    const { data: projectsRes } = useProjects({ pageNo: 1, pageSize: 1000 });
+    const { data: taskTypesRes } = useTaskTypes({ pageNo: 1, pageSize: 1000 });
+    const { data: usersRes } = useUsers({ pageNo: 1, pageSize: 1000 });
+    const { data: prioritiesRes } = usePriorities({ pageNo: 1, pageSize: 1000 });
+    const { data: taskStatusesRes } = useTaskStatuses({ pageNo: 1, pageSize: 1000 });
 
     const projects = (projectsRes?.data || []).map((p: any) => ({ value: p.projectIDP, label: p.projectName }));
     const taskTypes = (taskTypesRes?.data || []).map((t: any) => ({ value: t.taskTypeIDP, label: t.taskType }));

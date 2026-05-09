@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { RoleService } from '../../services/role.service';
-import type { RoleSaveModel } from '../../types/role.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import { ActionStatusEnum } from '@/types/api.types';
 
-// React Query hooks for managing user role data and state.
+import { RoleService } from '../../services/role.service';
+import type { RoleCreateUpdateDto } from '../../types/role.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
+
+// React Query hooks for managing role data and state.
 
 // Hook to fetch and manage paginated roles data.
-export const useRoles = (params: PagingParamsModel) => {
+export const useRoles = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['roles', params],
     queryFn: () => RoleService.getAllPaging(params),
@@ -35,7 +37,7 @@ export const useRoleLookups = () => {
 export const useSaveRole = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: RoleSaveModel) => RoleService.save(data),
+    mutationFn: (data: RoleCreateUpdateDto) => RoleService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },
@@ -46,7 +48,7 @@ export const useSaveRole = () => {
 export const useUpdateRoleStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => RoleService.generalAction(id, 'STATUS'),
+    mutationFn: (id: number) => RoleService.generalAction({ id, action: ActionStatusEnum.Status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },

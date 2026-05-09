@@ -39,7 +39,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </Button>
         )}
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 leading-tight">{title}</h1>
           {description && <p className="text-sm font-medium text-gray-400 mt-0.5">{description}</p>}
         </div>
       </div>

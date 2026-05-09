@@ -1,19 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TaskService } from '../../services/task.service';
-import type { TaskFilterModel, TaskSaveModel } from '../../types/task.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { TaskCreateUpdateDto, TaskPagingFilterDto } from '../../types/task.types';
 
 // React Query hooks for managing core task data and relationships.
 
-// Hook to fetch paginated tasks data with optional filters.
-export const useTasks = (params: PagingParamsModel, filters?: TaskFilterModel) => {
+// Hook to fetch and manage paginated tasks with optional filtering.
+export const useTasks = (params: TaskPagingFilterDto) => {
   return useQuery({
-    queryKey: ['tasks', params, filters],
-    queryFn: () => TaskService.getAllPaging(params, filters),
+    queryKey: ['tasks', params],
+    queryFn: () => TaskService.getAllPaging(params),
   });
 };
 
-// Hook to fetch and manage a single task's data.
+// Hook to fetch and manage a single task's data by ID.
 export const useTask = (id: number) => {
   return useQuery({
     queryKey: ['tasks', id],
@@ -53,7 +52,7 @@ export const useProjectUsers = (projectId: number) => {
 export const useSaveTask = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: TaskSaveModel) => TaskService.save(data),
+    mutationFn: (data: TaskCreateUpdateDto) => TaskService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },

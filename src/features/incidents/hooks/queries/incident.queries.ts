@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ActionStatusEnum } from '@/types/api.types';
+
 import { IncidentService } from '../../services/incident.service';
-import type { IncidentSaveModel } from '../../types/incident.types';
-import type { PagingParamsModel } from '@/types/paging.types';
+import type { IncidentCreateUpdateDto } from '../../types/incident.types';
+import type { CommonPagingRequestDto } from '@/types/paging.types';
 
 // React Query hooks for managing incident data and state.
 
 // Hook to fetch and manage paginated incidents data.
-export const useIncidents = (params: PagingParamsModel) => {
+export const useIncidents = (params: CommonPagingRequestDto) => {
   return useQuery({
     queryKey: ['incidents', params],
     queryFn: () => IncidentService.getAllPaging(params),
@@ -26,7 +28,7 @@ export const useIncident = (id: number) => {
 export const useSaveIncident = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: IncidentSaveModel) => IncidentService.save(data),
+    mutationFn: (data: IncidentCreateUpdateDto) => IncidentService.save(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
     },

@@ -1,54 +1,98 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
   Edit2,
   Trash2,
-  Server,
   CheckCircle,
   XCircle,
-  ShieldCheck,
   AlertCircle,
   Filter,
   X
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/common/page-header';
 import {
   useSMTPs,
   useDeleteSMTP,
   useUpdateSMTPStatus
 } from '../hooks/queries/smtp.queries';
-import type { SMTPViewModel } from '../types/smtp.types';
-import { cn } from '@/utils/cn';
+import { SMTPFormModal } from '../components/SMTPFormModal';
+import type { SMTPListDto, SMTPCreateUpdateDto } from '../types/smtp.types';
 import Swal from 'sweetalert2';
-import { toast } from '@/utils/toast.utils';
+import { handleActionResult } from '@/utils/toast.utils';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
 import { Button } from '@/components/ui/button';
+import { DataPagination } from '@/components/ui/DataPagination';
 
 export const SMTPList: React.FC = () => {
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState<SMTPCreateUpdateDto>({
+    smtpIDP: 0,
+    smtp: '',
+    portNo: 587,
+    userName: '',
+    enableSSL: true,
+    status: true
+  });
 
-  // Debounce search term
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setPage(1); // Reset to page 1 on new search
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchTerm]);
+  const [appliedParams, setAppliedParams] = useState({
+    pageNo: 1,
+    pageSize: 10,
+    searchValue: ''
+  });
 
-  const { data, isLoading, isError } = useSMTPs({ page, size: pageSize, search: debouncedSearch });
+  const { data, isLoading, isError, refetch } = useSMTPs({ 
+    pageNo: appliedParams.pageNo, 
+    pageSize: appliedParams.pageSize, 
+    searchValue: appliedParams.searchValue 
+  });
   const deleteMutation = useDeleteSMTP();
   const statusMutation = useUpdateSMTPStatus();
 
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-  }, []);
+  const handleOpenModal = (item?: SMTPListDto) => {
+    if (item) {
+      setFormData({
+        smtpidp: item.smtpidp || 0,
+        smtp: item.smtp,
+        portNo: item.portNo,
+        userName: item.userName,
+        enableSSL: item.enableSSL,
+        status: item.status
+      });
+    } else {
+      setFormData({
+        smtpidp: 0,
+        smtp: '',
+        portNo: 587,
+        userName: '',
+        enableSSL: true,
+        status: true
+      });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSearch = () => {
+    setAppliedParams(prev => ({
+      ...prev,
+      searchValue: searchTerm,
+      pageNo: 1
+    }));
+  };
+
+  const handleClear = () => {
+    setSearchTerm('');
+    setAppliedParams({
+      pageNo: 1,
+      pageSize: appliedParams.pageSize,
+      searchValue: ''
+    });
+  };
+
+
 
   const handleDelete = useCallback(async (id: number) => {
     const result = await Swal.fire({
@@ -61,12 +105,8 @@ export const SMTPList: React.FC = () => {
     });
 
     if (result.isConfirmed) {
-      try {
-        await deleteMutation.mutateAsync(id);
-        toast.success('Configuration removed successfully');
-      } catch (error) {
-        toast.error('Failed to remove configuration');
-      }
+      const res = await deleteMutation.mutateAsync(id);
+      handleActionResult(res);
     }
   }, [deleteMutation]);
 
@@ -81,22 +121,16 @@ export const SMTPList: React.FC = () => {
     });
 
     if (result.isConfirmed) {
-      try {
-        await statusMutation.mutateAsync(id);
-        toast.success('SMTP status synchronized');
-      } catch (error) {
-        toast.error('Failed to update status');
-      }
+      const res = await statusMutation.mutateAsync(id);
+      handleActionResult(res);
     }
   }, [statusMutation]);
 
-  const smtpItems: SMTPViewModel[] = useMemo(() => {
+  const smtps: SMTPListDto[] = useMemo(() => {
     return data?.data || [];
   }, [data]);
 
-  const totalPages = useMemo(() => {
-    return data?.totalPages || 0;
-  }, [data]);
+
 
   if (isError) {
     return (
@@ -109,20 +143,21 @@ export const SMTPList: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header Card */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">SMTP Configurations</h1>
-          <p className="text-sm font-medium text-gray-400 mt-0.5">Manage system email servers and communication protocols</p>
-        </div>
-        <button
-          onClick={() => navigate('/smtp/new')}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold text-sm cursor-pointer"
-        >
-          <Plus size={18} className="mr-2" /> Add New SMTP
-        </button>
-      </div>
+    <div className="p-6 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 w-full overflow-hidden">
+      <PageHeader 
+        title="SMTP Master"
+        description="Manage system email servers and communication protocols"
+        showBack={true}
+        onBack={() => navigate('/settings')}
+        action={
+          <button
+            onClick={() => handleOpenModal()}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-semibold text-sm cursor-pointer"
+          >
+            <Plus size={18} className="mr-2" /> Add New SMTP
+          </button>
+        }
+      />
 
       {/* Table Card */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
@@ -142,14 +177,14 @@ export const SMTPList: React.FC = () => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => { setDebouncedSearch(searchTerm); setPage(1); }}
+              onClick={handleSearch}
               className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors shadow-sm"
               title="Filter"
             >
               <Filter size={20} />
             </button>
             <button
-              onClick={() => { setSearchTerm(''); setDebouncedSearch(''); setPage(1); }}
+              onClick={handleClear}
               className="w-10 h-10 bg-white border border-gray-200 text-gray-500 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
               title="Clear"
             >
@@ -180,12 +215,12 @@ export const SMTPList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {smtpItems.length > 0 ? (
-                  smtpItems.map((s: SMTPViewModel) => (
+                {smtps.length > 0 ? (
+                  smtps.map((s: SMTPListDto) => (
                     <tr key={s.smtpidp} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => navigate(`/smtp/${s.smtpidp}/edit`)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit">
+                          <button onClick={() => handleOpenModal(s)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit">
                             <Edit2 size={16} />
                           </button>
                           <button onClick={() => handleDelete(s.smtpidp)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Delete">
@@ -194,16 +229,7 @@ export const SMTPList: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
-                              <Server size={20} />
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{s.smtp}</div>
-                          </div>
-                        </div>
+                        <div className="text-sm font-bold text-gray-900">{s.smtp}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.portNo}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.userName}</td>
@@ -233,33 +259,23 @@ export const SMTPList: React.FC = () => {
           </div>
         )}
 
-        {/* Pagination Section */}
-        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-700">
-              Showing <span className="font-medium">{smtpItems.length}</span> of <span className="font-medium">{data?.totalCount || 0}</span> results
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <div className="flex items-center -space-x-px shadow-sm rounded-md">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed first:rounded-l-lg last:rounded-r-lg"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page * pageSize >= (data?.totalCount || 0)}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed first:rounded-l-lg last:rounded-r-lg"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DataPagination
+          totalItems={data?.totalCount || 0}
+          pageSize={appliedParams.pageSize}
+          currentPage={appliedParams.pageNo}
+          onPageChange={(p) => setAppliedParams(prev => ({ ...prev, pageNo: p }))}
+          onPageSizeChange={(s) => setAppliedParams(prev => ({ ...prev, pageSize: s, pageNo: 1 }))}
+        />
       </div>
+
+      <SMTPFormModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+        smtpId={formData.smtpidp}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 };

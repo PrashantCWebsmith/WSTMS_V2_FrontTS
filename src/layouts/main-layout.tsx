@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { Navbar } from '@/components/layout/navbar';
-import { cn } from '@/utils/cn';
 
 interface MainLayoutProps {
   children: React.ReactNode;

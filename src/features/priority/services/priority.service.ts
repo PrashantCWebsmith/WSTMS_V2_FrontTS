@@ -1,40 +1,43 @@
 import api from '@/api/axios-instance';
-import type { PagedResultModel, PagingParamsModel } from '@/types/paging.types';
+import { toast } from '@/utils/toast.utils';
+import type { ActionRequestDto, SQLReturnMessageNValue, ApiResponse } from '@/types/api.types';
+import { ActionStatusEnum } from '@/types/api.types';
+
+import type { PagedResult, CommonPagingRequestDto } from '@/types/paging.types';
 import type {
-  PriorityModel,
-  PrioritySaveModel,
-  PriorityViewModel
+  PriorityCreateUpdateDto,
+  PriorityListDto,
+  PriorityDto
 } from '../types/priority.types';
 
 // Service for managing task priority API interactions.
 export const PriorityService = {
   // Fetch paginated priorities for display.
-  getAllPaging: async (params: PagingParamsModel): Promise<PagedResultModel<PriorityViewModel>> => {
-    let url = `/Priority/GetPaging?page=${params.page}&size=${params.size}`;
-    if (params.search) url += `&search=${encodeURIComponent(params.search)}`;
-    const response = await api.get<PagedResultModel<PriorityViewModel>>(url);
-    return response.data;
+  getAllPaging: async (params: CommonPagingRequestDto): Promise<PagedResult<PriorityListDto>> => {
+    const response = await api.post<ApiResponse<PagedResult<PriorityListDto>>>('/Priority/GetPaging', params);
+    return response.data.data!;
   },
 
   // Fetch a single priority by ID for display or editing.
-  getByID: async (id: number): Promise<PriorityViewModel> => {
-    const response = await api.get<PriorityViewModel>(`/Priority/Get/${id}`);
-    return response.data;
+  getByID: async (id: number): Promise<PriorityDto> => {
+    const response = await api.get<ApiResponse<PriorityDto>>(`/Priority/Get/${id}`);
+    return response.data.data!;
   },
 
   // Save or update a priority entity.
-  save: async (data: PrioritySaveModel): Promise<PriorityModel> => {
-    const response = await api.post<PriorityModel>('/Priority/Save', data);
-    return response.data;
+  save: async (data: PriorityCreateUpdateDto): Promise<SQLReturnMessageNValue> => {
+    const response = await api.post<ApiResponse<SQLReturnMessageNValue>>('/Priority/Save', data);
+    return response.data.data!;
   },
 
   // Delete a priority by ID.
-  delete: async (id: number): Promise<void> => {
-    return PriorityService.generalAction(id, 'DELETE');
+  delete: async (id: number): Promise<SQLReturnMessageNValue> => {
+    return PriorityService.generalAction({ id, action: ActionStatusEnum.Delete });
   },
 
   // Perform generalized actions like delete or status updates.
-  generalAction: async (id: number, action: string): Promise<void> => {
-    await api.put(`/Priority/Action`, { id, action });
+  generalAction: async (params: ActionRequestDto): Promise<SQLReturnMessageNValue> => {
+    const response = await api.post<ApiResponse<SQLReturnMessageNValue>>(`/Priority/Action`, params);
+    return response.data.data!;
   }
 };

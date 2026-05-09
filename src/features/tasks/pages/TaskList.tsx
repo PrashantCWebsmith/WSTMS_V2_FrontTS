@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     Plus, 
@@ -6,36 +6,28 @@ import {
     Filter, 
     LayoutGrid, 
     List, 
-    Clock, 
-    AlertCircle, 
-    ChevronRight,
-    SearchX,
     X,
     Edit2,
     Trash2,
     Calendar,
     Eye,
     RefreshCw,
-    Upload,
     MessageSquare,
-    Square,
     Briefcase
 } from 'lucide-react';
-import { PageHeader } from '@/components/common/page-header';
 import Select from 'react-select';
 import { KanbanBoard } from './KanbanBoard';
-import { SearchableSelect } from '@/components/ui/SearchableSelect';
+import { DataPagination } from '@/components/ui/DataPagination';
 import { useTasks, useDeleteTask, useTaskLookups } from '../hooks/queries/task.queries';
 import { useTimeTracking } from '@/providers/time-tracking-provider';
 import Swal from 'sweetalert2';
 import { toast } from '@/utils/toast.utils';
 import { TableSkeleton } from '@/components/ui/TableSkeleton';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { TaskFormModal } from '../components/TaskFormModal';
 import { TaskStatusModal } from '../components/TaskStatusModal';
 import { TaskCommentModal } from '../components/TaskCommentModal';
 import { TaskDocumentModal } from '../components/TaskDocumentModal';
-import type { TaskViewModel, TaskFilterModel } from '../types/task.types';
+import type { TaskListDto, TaskPagingFilterDto } from '../types/task.types';
 
 interface TaskListProps {
     hideHeader?: boolean;
@@ -44,77 +36,88 @@ interface TaskListProps {
 export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-    const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const [filters, setFilters] = useState<TaskFilterModel>({
+    // Draft filters (bound to inputs, not yet applied)
+    const [draftFilters, setDraftFilters] = useState<Omit<TaskPagingFilterDto, 'pageNo' | 'pageSize'>>({
         projectIDF: 0,
         assignToIDF: 0,
         taskStatusIDF: 0,
-        searchTerm: ''
+        searchValue: ''
     });
 
-    const { data, isLoading, refetch } = useTasks({ page, size: pageSize }, filters);
+    // Applied filters + page (these drive the actual query key)
+    const [appliedParams, setAppliedParams] = useState<TaskPagingFilterDto>({
+        pageNo: 1,
+        pageSize: 10,
+        projectIDF: 0,
+        assignToIDF: 0,
+        taskStatusIDF: 0,
+        searchValue: ''
+    });
+
+    const { data, isLoading, refetch } = useTasks(appliedParams);
     const { data: lookups } = useTaskLookups();
     const deleteMutation = useDeleteTask();
-    const { activeTask, startTimer, stopTimer } = useTimeTracking();
+    const { startTimer, stopTimer } = useTimeTracking();
 
     // Modal States
-    const [selectedTask, setSelectedTask] = useState<TaskViewModel | null>(null);
+    const [selectedTask, setSelectedTask] = useState<TaskListDto | null>(null);
+    const [selectedTaskID, setSelectedTaskID] = useState<number | undefined>(undefined);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
     const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
 
-    const handleOpenFormModal = (task?: TaskViewModel) => {
-        if (task) {
-            navigate(`/tasks/${task.taskIDP}/edit`);
-        } else {
-            navigate('/tasks/new');
-        }
+    const handleOpenFormModal = (task?: TaskListDto) => {
+        setSelectedTaskID(task?.taskIDP);
+        setIsFormModalOpen(true);
     };
 
-    const handleOpenStatusModal = (task: TaskViewModel) => {
+    const handleOpenStatusModal = (task: TaskListDto) => {
         setSelectedTask(task);
         setIsStatusModalOpen(true);
     };
 
-    const handleOpenCommentModal = (task: TaskViewModel) => {
+    const handleOpenCommentModal = (task: TaskListDto) => {
         setSelectedTask(task);
         setIsCommentModalOpen(true);
     };
 
-    const handleOpenDocumentModal = (task: TaskViewModel) => {
-        setSelectedTask(task);
-        setIsDocumentModalOpen(true);
-    };
-
-    // Init Logic from V1
+    // Update draft filter selects
     const handleFilterSelectChange = (selectedOption: any, actionMeta: any) => {
-        const name = actionMeta.name as keyof TaskFilterModel;
+        const name = actionMeta.name as keyof Omit<TaskPagingFilterDto, 'pageNo' | 'pageSize'>;
         const value = selectedOption ? selectedOption.value : 0;
-        setFilters(prev => ({
+        setDraftFilters(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Apply draft filters → commit to query key (resets to page 1)
+    const handleSearch = useCallback(() => {
+        setAppliedParams(prev => ({
             ...prev,
-            [name]: value
+            ...draftFilters,
+            pageNo: 1,
+            pageSize
         }));
-    };
+    }, [draftFilters, pageSize]);
 
-    const handleSearch = () => {
-        setPage(1);
-        refetch();
-    };
+    // Clear drafts and reset query to default
+    const handleClearFilters = useCallback(() => {
+        const empty = { projectIDF: 0, assignToIDF: 0, taskStatusIDF: 0, searchValue: '' };
+        setDraftFilters(empty);
+        setAppliedParams({ ...empty, pageNo: 1, pageSize });
+    }, [pageSize]);
 
-    const handleClearFilters = () => {
-        const emptyFilters = {
-            projectIDF: 0,
-            assignToIDF: 0,
-            taskStatusIDF: 0,
-            searchTerm: ''
-        };
-        setFilters(emptyFilters);
-        setPage(1);
-        // refetch will happen automatically due to query dependency if useTasks is set up that way
-    };
+    // Navigate to a specific page
+    const handlePageChange = useCallback((newPage: number) => {
+        setAppliedParams(prev => ({ ...prev, pageNo: newPage }));
+    }, []);
+
+    // Change page size and reset to page 1
+    const handlePageSizeChange = useCallback((newSize: number) => {
+        setPageSize(newSize);
+        setAppliedParams(prev => ({ ...prev, pageSize: newSize, pageNo: 1 }));
+    }, []);
 
     const handleDelete = async (id: number) => {
         const result = await Swal.fire({
@@ -197,7 +200,7 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
     const tasks = data?.data || [];
     const totalItems = data?.totalCount || 0;
 
-    const handleKanbanStatusChange = async (task: TaskViewModel, oldStatusId: number, newStatusId: number) => {
+    const handleKanbanStatusChange = async (task: TaskListDto, _oldStatusId: number, newStatusId: number) => {
         handleOpenStatusModal({ ...task, taskStatusIDF: newStatusId });
     };
 
@@ -208,7 +211,7 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                     {/* Header Card */}
                     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div>
-                            <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">Task Management</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 leading-tight">Task Master</h1>
                             <p className="text-sm font-medium text-gray-400 mt-0.5">Track and manage operational workflows and project objectives</p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -221,7 +224,7 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                                     <List size={18} />
                                 </button>
                                 <button
-                                    onClick={() => { setViewMode('kanban'); setPageSize(100); }}
+                                    onClick={() => { setViewMode('kanban'); handlePageSizeChange(100); }}
                                     className={`p-1.5 rounded-md transition-all cursor-pointer ${viewMode === 'kanban' ? 'bg-blue-50 text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                                     title="Kanban Board"
                                 >
@@ -251,14 +254,14 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                             type="text"
                             placeholder="Search tasks..."
                             className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm shadow-sm"
-                            value={filters.searchTerm}
-                            onChange={(e) => setFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                            value={draftFilters.searchValue}
+                            onChange={(e) => setDraftFilters(prev => ({ ...prev, searchValue: e.target.value }))}
                         />
                     </div>
                     <div className="md:col-span-3">
                         <Select
                             name="projectIDF"
-                            value={projectOptions.find(o => o.value === filters.projectIDF)}
+                            value={projectOptions.find(o => o.value === draftFilters.projectIDF)}
                             onChange={handleFilterSelectChange}
                             options={projectOptions}
                             placeholder="Select Project"
@@ -269,7 +272,7 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                     <div className="md:col-span-2">
                         <Select
                             name="assignToIDF"
-                            value={userOptions.find(o => o.value === filters.assignToIDF)}
+                            value={userOptions.find(o => o.value === draftFilters.assignToIDF)}
                             onChange={handleFilterSelectChange}
                             options={userOptions}
                             placeholder="Select User"
@@ -280,7 +283,7 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                     <div className="md:col-span-2">
                         <Select
                             name="taskStatusIDF"
-                            value={statusOptions.find(o => o.value === filters.taskStatusIDF)}
+                            value={statusOptions.find(o => o.value === draftFilters.taskStatusIDF)}
                             onChange={handleFilterSelectChange}
                             options={statusOptions}
                             placeholder="Select Status"
@@ -345,9 +348,8 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-50">
                                     {tasks.length > 0 ? (
-                                        tasks.map((task: TaskViewModel) => {
-                                            const isEditDelete = (task.isEditDelete === true || task.isEditDelete === 1);
-                                            const isCurrentActive = activeTask?.taskIDP === task.taskIDP;
+                                        tasks.map((task: TaskListDto) => {
+                                            const isEditDelete = !!task.isEditDelete;
 
                                             return (
                                                 <tr key={task.taskIDP} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
@@ -484,40 +486,13 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                             </table>
                         </div>
 
-                        {/* Pagination Section */}
-                        <div className="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="text-sm text-gray-700">
-                                    Showing <span className="font-medium">{Math.min((page - 1) * pageSize + 1, totalItems)}</span> to <span className="font-medium">{Math.min(page * pageSize, totalItems)}</span> of <span className="font-medium">{totalItems}</span> results
-                                </div>
-                                <div className="flex flex-wrap items-center justify-center gap-4">
-                                    <div className="w-32">
-                                        <SearchableSelect
-                                            options={[10, 20, 50, 100].map(size => ({ value: size, label: `Show ${size}` }))}
-                                            value={pageSize}
-                                            onChange={(val) => setPageSize(Number(val))}
-                                            isSearchable={false}
-                                        />
-                                    </div>
-                                    <div className="flex items-center -space-x-px shadow-sm rounded-md">
-                                        <button
-                                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                                            disabled={page === 1}
-                                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed first:rounded-l-lg last:rounded-r-lg"
-                                        >
-                                            Previous
-                                        </button>
-                                        <button
-                                            onClick={() => setPage(p => p + 1)}
-                                            disabled={page * pageSize >= totalItems}
-                                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed first:rounded-l-lg last:rounded-r-lg"
-                                        >
-                                            Next
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <DataPagination
+                            totalItems={totalItems}
+                            pageSize={appliedParams.pageSize}
+                            currentPage={appliedParams.pageNo}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
                     </div>
                 )}
 
@@ -525,7 +500,8 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                 <TaskFormModal
                     isOpen={isFormModalOpen}
                     onClose={() => setIsFormModalOpen(false)}
-                    taskId={selectedTask?.taskIDP}
+                    taskId={selectedTaskID}
+                    onSuccess={() => refetch()}
                 />
 
                 {selectedTask && (
@@ -534,21 +510,21 @@ export const TaskList: React.FC<TaskListProps> = ({ hideHeader = false }) => {
                             isOpen={isStatusModalOpen}
                             onClose={() => setIsStatusModalOpen(false)}
                             task={selectedTask}
-                            onStatusChangeSuccess={refetch}
+                            onStatusChangeSuccess={() => refetch()}
                         />
                         <TaskCommentModal
                             isOpen={isCommentModalOpen}
                             onClose={() => setIsCommentModalOpen(false)}
                             taskId={selectedTask.taskIDP}
                             taskNo={selectedTask.taskNo}
-                            onCommentSuccess={refetch}
+                            onCommentSuccess={() => refetch()}
                         />
                         <TaskDocumentModal
                             isOpen={isDocumentModalOpen}
                             onClose={() => setIsDocumentModalOpen(false)}
                             taskId={selectedTask.taskIDP}
                             taskNo={selectedTask.taskNo}
-                            onUploadSuccess={refetch}
+                            onUploadSuccess={() => refetch()}
                         />
                     </>
                 )}

@@ -14,7 +14,6 @@ import {
 } from 'recharts';
 import {
   FileText,
-  Calendar,
   Download,
   Printer,
   Filter,
@@ -23,7 +22,6 @@ import {
   CheckSquare,
   Clock,
   TrendingUp,
-  ChevronDown,
   X,
   Loader
 } from 'lucide-react';
@@ -31,7 +29,6 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 export const ReportsDashboard: React.FC = () => {
   const [activeReport, setActiveReport] = useState('tasks');
-  const [dateRange] = useState('Last 30 Days');
   const [isLoading] = useState(false); // Placeholder for future logic
 
   // Mock Data

@@ -11,6 +11,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { PageHeader } from '@/components/common/page-header';
 
 export const SettingsHub: React.FC = () => {
   const navigate = useNavigate();
@@ -69,13 +70,13 @@ export const SettingsHub: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6 animate-in fade-in duration-500">
-      {/* Header Card */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-              <h1 className="text-2xl font-black tracking-tight text-gray-900 leading-tight">Settings & Configuration</h1>
-              <p className="text-sm font-medium text-gray-400 mt-0.5">Manage system masters, automations, and global preferences</p>
-          </div>
-      </div>
+      {/* Header Section */}
+      <PageHeader 
+        title="Settings & Configuration"
+        description="Manage system masters, automations, and global preferences"
+        showBack={true}
+        onBack={() => navigate('/')}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {settingCards.map((card, index) => {

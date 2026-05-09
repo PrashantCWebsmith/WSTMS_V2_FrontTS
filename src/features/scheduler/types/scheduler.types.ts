@@ -1,37 +1,35 @@
 // interfaces for Model, ViewModel, and Persistence.
 
-// Model: Represents the core entity used for persistence.
-export interface SchedulerModel {
-  schedulerIDP: number;
-  emailSubject: string;
-  emailBody: string;
-  sendToEmailIDs: string;
-  ccEmailIDs: string;
-  startDate: string;
-  repeatType: string;
-  repeatDays: string;
-}
-
-// ViewModel: Represents the data structure used for display in the UI.
-export interface SchedulerViewModel {
-  schedulerIDP: number;
-  emailSubject: string;
-  emailBody: string;
-  sendToEmailIDs: string;
-  ccEmailIDs: string;
-  startDate: string;
-  repeatType: string;
-  repeatDays: string;
-}
-
-// SaveModel: Represents the payload for creating or updating an entity.
-export interface SchedulerSaveModel {
+export interface SchedulerCreateUpdateDto {
   schedulerIDP?: number;
   emailSubject: string;
   emailBody: string;
   sendToEmailIDs: string;
-  ccEmailIDs: string;
+  ccEmailIDs?: string | null;
   startDate: string;
   repeatType: string;
-  repeatDays: string;
+  repeatDays?: string | null;
+  status: boolean;
+}
+
+export interface SchedulerListDto {
+  schedulerIDP: number;
+  emailSubject: string;
+  sendToEmailIDs: string;
+  startDate: string;
+  repeatType: string;
+  status: boolean;
+}
+
+export interface SchedulerDto {
+  schedulerIDP: number;
+  emailSubject: string;
+  emailBody: string;
+  sendToEmailIDs: string;
+  ccEmailIDs?: string | null;
+  startDate: string;
+  repeatType: string;
+  repeatDays?: string | null;
+  status?: boolean | null;
+  createdDateTime?: string | null;
 }

@@ -1,20 +1,21 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { X, Search, Check, Save, Layers, AlertCircle, Calendar } from 'lucide-react';
+import { X, Search, Check, Save, Layers, Calendar } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Editor, EditorProvider, Toolbar, BtnBold, BtnItalic, BtnUnderline, BtnStrikeThrough, BtnLink, BtnClearFormatting } from 'react-simple-wysiwyg';
+import { Editor, EditorProvider, Toolbar, BtnBold, BtnItalic, BtnUnderline, BtnLink, BtnClearFormatting } from 'react-simple-wysiwyg';
 import Select from 'react-select';
 import { useTask, useSaveTask, useTaskLookups, useProjectUsers } from '../hooks/queries/task.queries';
 import Swal from 'sweetalert2';
-import { toast } from '@/utils/toast.utils';
+import { toast, handleActionResult } from '@/utils/toast.utils';
 import { taskSchema, type TaskFormValues } from '../validation/task.validation';
 import { useAuth } from '@/providers/auth-provider';
-import type { ProjectLookupModel, StatusLookupModel } from '../types/task.types';
+import type { ProjectLookupModel } from '../types/task.types';
 
 interface TaskFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   taskId?: number;
+  onSuccess?: () => void;
 }
 
 const getPriorityColor = (name: string, isSelected: boolean) => {
@@ -35,11 +36,11 @@ const InputWrapper = ({ label, children, icon: Icon }: { label: string, children
   </div>
 );
 
-export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, taskId }) => {
+export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, taskId, onSuccess }) => {
   const isEditing = !!taskId && taskId > 0;
   const { user } = useAuth();
   const { data: task, isLoading: isFetching } = useTask(taskId || 0);
-  const { data: lookups, isLoading: isLoadingLookups } = useTaskLookups();
+  const { data: lookups } = useTaskLookups();
   const saveMutation = useSaveTask();
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -78,7 +79,6 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
   const watchTaskTypeIDF = watch('taskTypeIDF');
   const watchPriorityIDF = watch('priorityIDF');
   const watchTaskStatusIDF = watch('taskStatusIDF');
-  const watchIsBlocked = watch('isBlocked');
 
   const { data: projectMembers, isLoading: isLoadingMembers } = useProjectUsers(watchProjectIDF);
 
@@ -92,7 +92,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
         taskStatusIDF: task.taskStatusIDF,
         taskTypeIDF: task.taskTypeIDF,
         priorityIDF: task.priorityIDF,
-        assignToIDF: task.assignToIDF,
+        assignToIDF: task.assignToIDF ? Number(task.assignToIDF) : 0,
         deadlineDate: task.deadlineDate ? new Date(task.deadlineDate).toISOString().split('T')[0] : '',
         startDate: task.startDate ? new Date(task.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         estimatedHours: task.estimatedHours || 0,
@@ -125,21 +125,24 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
   }, [isOpen, task, isEditing, reset]);
 
   const onFormSubmit = async (formData: TaskFormValues) => {
-    try {
-      if (!formData.projectIDF) { 
-          Swal.fire("Error", "Please select a project.", "error"); 
-          return; 
-      }
-      
-      await saveMutation.mutateAsync({
-        ...formData,
-        taskIDP: isEditing ? (taskId || 0) : 0,
-        assignByIDF: Number(user?.userIDP) || 0,
-      });
-      toast.success('Saved!');
+    if (!formData.projectIDF) { 
+        Swal.fire("Error", "Please select a project.", "error"); 
+        return; 
+    }
+    
+    const result = await saveMutation.mutateAsync({
+      ...formData,
+      taskIDP: isEditing ? (taskId || 0) : 0,
+      assignByIDF: Number(user?.userIDP) || 0,
+      startDate: formData.startDate || undefined,
+      blockReason: formData.blockReason || undefined,
+      remarks: formData.remarks || undefined,
+    } as any);
+
+    handleActionResult(result);
+    if (result?.outval === 1) {
+      onSuccess?.();
       onClose();
-    } catch (error) {
-      toast.error("Failed to save task");
     }
   };
 
@@ -155,7 +158,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
     setValue('assignToIDF', isSelected ? 0 : u.userIDP, { shouldValidate: true });
   };
 
-  const progressOptions = [];
+  const progressOptions: { value: number; label: string }[] = [];
   for (let i = 0; i <= 100; i += 10) {
     progressOptions.push({ value: i, label: `${i}%` });
   }

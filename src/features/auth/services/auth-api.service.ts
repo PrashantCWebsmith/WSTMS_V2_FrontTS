@@ -1,5 +1,6 @@
 import api from '@/api/axios-instance';
-import type { LoginCredentials, AuthResponse } from '../types/auth.types';
+import type { LoginModel, AuthResponseModel } from '../types/auth.types';
+import type { ApiResponse } from '@/types/api.types';
 
 /**
  * --------------------------------------------------------------------------
@@ -10,9 +11,9 @@ import type { LoginCredentials, AuthResponse } from '../types/auth.types';
 /**
  * Executes login request and returns proper AuthResponse interface
  */
-export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
-  const { data } = await api.post<AuthResponse>('/Auth/Login', credentials);
-  return data;
+export async function login(credentials: LoginModel): Promise<AuthResponseModel> {
+  const response = await api.post<ApiResponse<AuthResponseModel>>('/Auth/Login', credentials);
+  return response.data.data!;
 }
 
 /**

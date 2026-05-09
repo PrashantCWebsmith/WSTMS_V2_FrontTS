@@ -3,7 +3,6 @@ import { X, Save, AlertCircle } from 'lucide-react';
 import Select from 'react-select';
 import { toast } from '@/utils/toast.utils';
 import { useTaskLookups, useSaveTask } from '../hooks/queries/task.queries';
-import { useAuth } from '@/providers/auth-provider';
 import type { TaskViewModel } from '../types/task.types';
 
 interface TaskStatusModalProps {
@@ -14,7 +13,6 @@ interface TaskStatusModalProps {
 }
 
 export const TaskStatusModal: React.FC<TaskStatusModalProps> = ({ isOpen, onClose, task, onStatusChangeSuccess }) => {
-    const { user } = useAuth();
     const { data: lookups, isLoading: isLoadingLookups } = useTaskLookups();
     const saveMutation = useSaveTask();
 

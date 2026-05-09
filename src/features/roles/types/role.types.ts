@@ -1,22 +1,18 @@
-// interfaces for Model, ViewModel, and Persistence.
-
-// Model: Represents the core entity used for persistence.
-export interface RoleModel {
-  roleIDP: number;
-  roleName: string;
-  status: boolean;
-}
-
-// ViewModel: Represents the data structure used for display in the UI.
-export interface RoleViewModel {
-  roleIDP: number;
-  roleName: string;
-  status: boolean;
-}
-
-// SaveModel: Represents the payload for creating or updating an entity.
-export interface RoleSaveModel {
+export interface RoleCreateUpdateDto {
   roleIDP?: number;
   roleName: string;
   status: boolean;
+}
+
+export interface RoleListDto {
+  roleIDP: number;
+  roleName: string;
+  status: boolean;
+}
+
+export interface RoleDto {
+  roleIDP: number;
+  roleName: string;
+  status?: boolean | null;
+  createdDateTime?: string | null;
 }
