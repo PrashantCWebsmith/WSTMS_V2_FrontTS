@@ -249,7 +249,7 @@ export const SchedulerFormModal: React.FC<SchedulerFormModalProps> = ({
                             className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50 flex items-center gap-2"
                         >
                             <Save size={18} />
-                            {isEditing ? 'Save Changes' : 'Initiate Automation'}
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
                         </button>
                     </div>
                 </form>

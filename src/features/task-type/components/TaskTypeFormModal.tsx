@@ -138,7 +138,7 @@ export const TaskTypeFormModal: React.FC<TaskTypeFormModalProps> = ({
                             disabled={saveMutation.isPending}
                             className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50"
                         >
-                            {isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Type')}
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
                         </button>
                     </div>
                 </form>

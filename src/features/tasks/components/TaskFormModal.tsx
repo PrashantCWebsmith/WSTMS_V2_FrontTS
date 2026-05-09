@@ -397,9 +397,9 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, t
                     <button
                       type="submit"
                       disabled={saveMutation.isPending}
-                      className="w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all text-sm font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm disabled:opacity-50"
                     >
-                      <Save size={18} /> {isEditing ? 'Update Task' : 'Create Task'}
+                      <Save size={18} /> {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
                     </button>
                     <button
                       type="button"

@@ -5,6 +5,7 @@ import { useProject, useSaveProject } from '../hooks/queries/project.queries';
 import { toast, handleActionResult } from '@/utils/toast.utils';
 import { projectSchema, type ProjectFormValues } from '../validation/project.validation';
 import { Modal } from '@/components/ui/modal';
+import { Save } from 'lucide-react';
 
 interface ProjectFormModalProps {
     isOpen: boolean;
@@ -163,9 +164,10 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
                         <button
                             type="submit"
                             disabled={saveMutation.isPending}
-                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50"
+                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50 flex items-center gap-2"
                         >
-                            {saveMutation.isPending ? 'Saving...' : 'Save Project'}
+                            <Save size={18} />
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
                         </button>
                     </div>
                 </form>

@@ -16,8 +16,11 @@ export const EmployeeDocumentService = {
   // Fetch all documents associated with a specific user.
   getByUser: async (userId: number): Promise<EmployeeDocumentViewModel[]> => {
     const response = await api.get(`/EmployeeDocument/GetByUser?userId=${userId}`);
-    const data = response.data as any;
-    return data.data || data || [];
+    let data = response.data?.data || response.data || [];
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch { data = []; }
+    }
+    return Array.isArray(data) ? data : [];
   },
 
   // Upload a new employee document using FormData.

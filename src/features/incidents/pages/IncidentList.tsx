@@ -26,7 +26,7 @@ export const IncidentList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<IncidentCreateUpdateDto>({
-    incidentIDP: 0,
+    incidentidp: 0,
     projectIDF: 0,
     userIDF: 0,
     status: 'Open',
@@ -49,7 +49,7 @@ export const IncidentList: React.FC = () => {
   const handleOpenModal = (item?: IncidentListDto) => {
     if (item) {
       setFormData({
-        incidentIDP: item.incidentIDP,
+        incidentidp: item.incidentidp,
         projectIDF: 0, // Will be fetched by modal
         userIDF: 0,    // Will be fetched by modal
         status: item.status,
@@ -57,7 +57,7 @@ export const IncidentList: React.FC = () => {
       });
     } else {
       setFormData({
-        incidentIDP: 0,
+        incidentidp: 0,
         projectIDF: 0,
         userIDF: 0,
         status: 'Open',
@@ -186,13 +186,13 @@ export const IncidentList: React.FC = () => {
                 <TableSkeleton columns={6} />
               ) : incidents.length > 0 ? (
                 incidents.map((i: IncidentListDto) => (
-                  <tr key={i.incidentIDP} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <tr key={i.incidentidp} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => handleOpenModal(i)} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors" title="Edit">
                           <Edit2 size={16} />
                         </button>
-                        <button onClick={() => handleDelete(i.incidentIDP)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Delete">
+                        <button onClick={() => handleDelete(i.incidentidp)} className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors" title="Delete">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -254,7 +254,7 @@ export const IncidentList: React.FC = () => {
         onClose={() => {
           setIsModalOpen(false);
         }}
-        incidentId={formData.incidentIDP}
+        incidentId={formData.incidentidp}
         onSuccess={() => refetch()}
       />
     </div>

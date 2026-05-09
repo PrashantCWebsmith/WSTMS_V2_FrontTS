@@ -1,5 +1,5 @@
 export interface IncidentCreateUpdateDto {
-  incidentIDP?: number;
+  incidentidp?: number;
   projectIDF: number;
   taskIDF?: number | null;
   userIDF: number;
@@ -11,9 +11,10 @@ export interface IncidentCreateUpdateDto {
 }
 
 export interface IncidentListDto {
-  incidentIDP: number;
-  projectName: string;
-  userName: string;
+  incidentidp: number;
+  projectIDF: number;
+  projectName?: string;
+  userName?: string;
   criticalPoint?: string | null;
   severity?: string | null;
   incidentDate: string;
@@ -21,7 +22,7 @@ export interface IncidentListDto {
 }
 
 export interface IncidentDto {
-  incidentIDP: number;
+  incidentidp: number;
   projectIDF: number;
   taskIDF?: number | null;
   userIDF: number;

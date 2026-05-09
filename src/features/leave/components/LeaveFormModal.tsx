@@ -181,14 +181,13 @@ export const LeaveFormModal: React.FC<LeaveFormModalProps> = ({
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            type="submit" 
-                            className="rounded-lg px-8 bg-blue-600 hover:bg-blue-700 font-semibold"
-                            isLoading={saveMutation.isPending}
+                        <button
+                            type="submit"
+                            disabled={saveMutation.isPending}
+                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50"
                         >
-                            <Save size={18} className="mr-2" />
-                            {isEditing ? 'Update Policy' : 'Save Leave Type'}
-                        </Button>
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
+                        </button>
                     </div>
                 </form>
             )}

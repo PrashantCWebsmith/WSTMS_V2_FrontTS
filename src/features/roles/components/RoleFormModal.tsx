@@ -124,7 +124,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
                             disabled={saveMutation.isPending}
                             className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50"
                         >
-                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Save Changes' : 'Create Role')}
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
                         </button>
                     </div>
                 </form>

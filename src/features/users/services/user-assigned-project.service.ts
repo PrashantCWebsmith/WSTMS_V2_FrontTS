@@ -15,8 +15,11 @@ export const UserAssignedProjectService = {
   // Fetch all projects assigned to a specific user.
   getAll: async (userId: number): Promise<UserAssignedProjectViewModel[]> => {
     const response = await api.get(`/UserAssignedProject/GetAll/${userId}`);
-    const data = response.data as any;
-    return data.data || data || [];
+    let data = response.data?.data || response.data || [];
+    if (typeof data === 'string') {
+      try { data = JSON.parse(data); } catch { data = []; }
+    }
+    return Array.isArray(data) ? data : [];
   },
 
   // Save or update a user-project assignment.

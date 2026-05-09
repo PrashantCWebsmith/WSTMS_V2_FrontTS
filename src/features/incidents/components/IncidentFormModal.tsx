@@ -94,7 +94,7 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
 
     const onFormSubmit = async (values: IncidentFormValues) => {
         const result = await saveMutation.mutateAsync({
-            incidentIDP: isEditing ? incidentId : 0,
+            incidentidp: isEditing ? incidentId : 0,
             ...values,
             incidentDate: values.incidentDate.toISOString()
         });
@@ -265,10 +265,9 @@ export const IncidentFormModal: React.FC<IncidentFormModalProps> = ({
                         <button
                             type="submit"
                             disabled={saveMutation.isPending}
-                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50 flex items-center gap-2"
+                            className="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-shadow shadow-sm disabled:opacity-50"
                         >
-                            <Save size={18} />
-                            {isEditing ? 'Update Record' : 'Submit Incident'}
+                            {saveMutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Save')}
                         </button>
                     </div>
                 </form>
